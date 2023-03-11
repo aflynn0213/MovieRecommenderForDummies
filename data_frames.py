@@ -3,40 +3,41 @@ import pandas as pd
 from multiprocessing import Pool
 import numpy as np
 
-
-def read_data(x):
-    return pd.read_csv(x)
+#def read_data(x):
+#    return pd.read_csv(x)
 
 if __name__ == '__main__':
-    files = ['movies_metadata.csv','credits.csv','ratings.csv']
-    #multithreaded processes
-    #proc1 = multiprocessing.Process(target=read_movies) 
-    #proc2 = multiprocessing.Process(target=read_credits)
-    #proc3 = multiprocessing.Process(target=read_ratings)
+    valid_val = True
     
-    #start processes
-    #proc1.start()
-    #proc2.start()
-    #proc3.start()
+    while(valid_val):
+        print("WOULD THE USER LIKE THE FULL DATABASE OR THE LITE VERSION: ")
+        opt = int(input("1 - FULL\n 2 - LITE (RECOMMENDED)\n"))
+        if (opt != 1 and opt != 2):
+            print("INVALID VALUE! TRY AGAIN\n")
+            continue
+        else:
+            rates = 'ratings_small.csv' if opt==2 else 'ratings.csv'
+            valid_val = False
+    files = ['movies_metadata.csv','credits.csv',rates]
     
-    #proc1.join()
-    #proc2.join()
-    #proc3.join()
+    #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
+    #with Pool(2) as p:
+     #   movs,creds,rats = p.map(read_data,files)
     
-    with Pool(5) as p:
-        movs,creds,rats = p.map(read_data,files)
-    
-    print("Just Read in CSVs")
+    rats = pd.read_csv(rates)
+ 
+    print("STEP 1 Just Read in CSVs")
     
     uniq_movs = rats.movieId.unique()
     uniq_usrs = rats.userId.unique()
-    print("Filtered for unique movies and users in ratings csv ")
+    print("STEP 2 Filtered for unique movies and users in ratings csv ")
+
     
-    sim_mat = pd.DataFrame(np.zeros((len(uniq_usrs),len(uniq_movs)),np.int8),index=uniq_usrs,columns=uniq_movs)
-    print(sim_mat.shape, "THIS IS THE EMPTY SIMILARITY MATRIX TO BE OPTIMIZED")
+    rats.drop('timestamp',axis=1, inplace=True)
+    print("STEP 3 ABOUT TO SET VALUES IN SIM MATRIX\n")
+    sim_mat = rats.pivot(index='userId',columns='movieId')
+    sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
+    #sim_mat.rename(columns = {sim_mat.columns : uniq_movs.sort()})
     
     #TODO: EMBEDDINGS????
-    
-    
-    
     
