@@ -3,7 +3,6 @@ import pandas as pd
 from multiprocessing import Pool
 import numpy as np
 
-
 #def read_data(x):
 #    return pd.read_csv(x)
 
@@ -41,6 +40,4 @@ if __name__ == '__main__':
     #sim_mat.rename(columns = {sim_mat.columns : uniq_movs.sort()})
     
     #TODO: EMBEDDINGS????
-    
-    
     
