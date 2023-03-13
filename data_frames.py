@@ -3,7 +3,6 @@ import pandas as pd
 from multiprocessing import Pool
 import numpy as np
 
-
 def read_data(x):
     return pd.read_csv(x)
 
@@ -88,5 +87,4 @@ if __name__ == '__main__':
     reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
     print("STEP 7 WRITING RECOMMENDATION MATRIX TO CSV")
     reco_mat.to_csv('recommendation_matrix.csv',encoding='utf-8')
-    
-    
+
