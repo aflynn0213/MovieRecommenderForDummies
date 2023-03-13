@@ -4,7 +4,6 @@ from multiprocessing import Pool
 import numpy as np
 
 
-
 def read_data(x):
     if x == 'movies_metadata.csv':
         return pd.read_csv(x,usecols=["id","original_title"],dtype={"id":float,"original_title":"string"})
@@ -88,7 +87,7 @@ if __name__ == '__main__':
     
     #TURN INTO PANDAS DATAFRAME
     reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
-    
+
     print("STEP 6 Writing to csv files")
     sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
     reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
@@ -116,4 +115,3 @@ if __name__ == '__main__':
         print("THANK YOU FOR USING INVISIBLE AL'S MOVIE RECOMMENDER\n")
         print("HOPE TO SEE YOU SOON!\n")
         
-
