@@ -3,8 +3,6 @@ import pandas as pd
 from multiprocessing import Pool
 import numpy as np
 
-
-
 def read_data(x):
     if x == 'movies_metadata.csv':
         return pd.read_csv(x,usecols=["id","original_title"],dtype={"id":float,"original_title":"string"})
@@ -113,7 +111,5 @@ if __name__ == '__main__':
         print("PRESENTING FILMS NOW......")
         rand_movie_gen(sim_mat,movs,links)
     elif (user_opt == 3):
-        print("THANK YOU FOR USING INVISIBLE AL'S MOVIE RECOMMENDER\n")
+        print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
         print("HOPE TO SEE YOU SOON!\n")
-        
-
