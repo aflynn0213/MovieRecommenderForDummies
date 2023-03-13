@@ -4,9 +4,13 @@ from multiprocessing import Pool
 import numpy as np
 
 
-def read_data(x):
-    return pd.read_csv(x)
 
+def read_data(x):
+    if x == 'movies_metadata.csv':
+        return pd.read_csv(x,usecols=["id","original_title"],dtype={"id":float,"original_title":"string"})
+    else:
+        return pd.read_csv(x)
+    
 def gradient(A,U,M,stepsize,maxiter,tolerance=1e-02):
     
     eps = 2.2204e-14 #minimum step size for gradient descent
@@ -47,19 +51,19 @@ if __name__ == '__main__':
         else:
             rates = 'ratings_small.csv' if opt==2 else 'ratings.csv'
             valid_val = False
-    files = ['movies_metadata.csv','credits.csv',rates]
+    files = ['movies_metadata.csv','credits.csv',rates,'links_small.csv']
     
     #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
-    with Pool(2) as p:
-        movs,creds,rats = p.map(read_data,files)
+    with Pool(4) as p:
+        movs,creds,rats,links = p.map(read_data,files)
     
     rats = pd.read_csv(rates)
  
     print("STEP 1 Just Read in CSVs")
     
-    uniq_movs = rats.movieId.unique()
-    uniq_usrs = rats.userId.unique()
-    print("STEP 2 Filtered for unique movies and users in ratings csv ")
+    #uniq_movs = rats.movieId.unique()
+    #uniq_usrs = rats.userId.unique()
+    #print("STEP 2 Filtered for unique movies and users in ratings csv ")
 
     
     rats.drop('timestamp',axis=1, inplace=True)
@@ -67,8 +71,6 @@ if __name__ == '__main__':
     sim_mat = rats.pivot(index='userId',columns='movieId')
     sim_mat.fillna(0,inplace=True)
     
-    print("STEP 4 Writing SIM Matrix to csv file")
-    sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
     #sim_mat.rename(columns = {sim_mat.columns : uniq_movs.sort()})
     
     #TODO: EMBEDDINGS????
@@ -78,15 +80,40 @@ if __name__ == '__main__':
 
     U = np.random.rand(u_d,10)
     M = np.random.rand(m_d,10)
-    print("STEP 5 ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
+    print("STEP 4 ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
     U,M = gradient(gd_mat, U, M.T, .0025, 5000)    
     
-    print("STEP 6 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
+    print("STEP 5 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
     reco_mat = np.dot(U,M.T)
     
     #TURN INTO PANDAS DATAFRAME
     reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
-    print("STEP 7 WRITING RECOMMENDATION MATRIX TO CSV")
-    reco_mat.to_csv('recommendation_matrix.csv',encoding='utf-8')
     
+    print("STEP 6 Writing to csv files")
+    sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
+    reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
+    orig_mat = np.where(gd_mat != 0, 1, 0)
     
+    user_opt = 0
+    valid_opts = [1,2,3]
+    while(user_opt not in valid_opts):
+        print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
+        user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
+        if (user_opt not in valid_opts):
+            print("TRY AGAIN, VALID OPTIONS ARE 1-3\n")
+    if (user_opt == 1):
+        print("PATH NOT PROGRAMMED YET, TBD\n")
+    elif (user_opt == 2):
+        from rand_movie_gen import rand_movie_gen
+        print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
+        print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
+        print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
+        print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
+        print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
+        print("PRESENTING FILMS NOW......")
+        rand_movie_gen(sim_mat,movs,links)
+    elif (user_opt == 3):
+        print("THANK YOU FOR USING INVISIBLE AL'S MOVIE RECOMMENDER\n")
+        print("HOPE TO SEE YOU SOON!\n")
+        
+
