@@ -10,7 +10,11 @@ import pandas as pd
 def rand_movie_gen(uniq_mov,moves,links):
     movie_count = 1
     movie_dict = {}
-    val_rates = range(1,6.5,0.5)
+    val_rates = [1,1.5,2,2.5,3,3.5,4,4.5,5,6]
+    
+    links.set_index("movieId",inplace=True)
+    moves.set_index("id",inplace=True)
+    
     while(movie_count < 20):
         print("MOVIE #"+str(movie_count) +":\n")
         rando = np.random.random_integers(0,len(uniq_mov)-1)
@@ -18,10 +22,8 @@ def rand_movie_gen(uniq_mov,moves,links):
         mov_id = uniq_mov[rando]
         print(mov_id)
         print("HERERERE")
-        links.set_index("movieId",inplace=True)
         tmdb = int(links.at[mov_id,"tmdbId"])
         tmdb = str(tmdb)
-        moves.set_index("id",inplace=True)
         title = moves.at[tmdb,"original_title"]
         print(title)
         rating = float(input("RATING: \n6 for next"))
