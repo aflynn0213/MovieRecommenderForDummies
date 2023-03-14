@@ -28,6 +28,8 @@ def rand_movie_gen(uniq_mov,moves,links):
         print(title)
         rating = float(input("RATING: \n6 for next"))
         if (rating not in val_rates):
+            print("TRY AGAIN INVALID OPTION\n")
+        elif(rating==6):
             print("OKAY DISPLAYING NEW MOVIE\n")
         else:
             movie_dict[title]=rating
