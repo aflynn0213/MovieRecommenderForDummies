@@ -4,15 +4,6 @@ from multiprocessing import Pool
 import numpy as np
 
 
-def read_data(x):
-    if x == 'movies_metadata.csv':
-        return (pd.read_csv(x,usecols=["id","original_language","original_title"],dtype={"id":"string","original_title":"string"}) [lambda m: m["original_language"]=="en"])
-    else:
-        return pd.read_csv(x)
-
-def filter_foreign_movies(rates,links,movs):
-    
-    
 def gradient(A,U,M,stepsize,maxiter,tolerance=1e-02):
     
     eps = 2.2204e-14 #minimum step size for gradient descent
@@ -52,15 +43,11 @@ if __name__ == '__main__':
             continue
         else:
             rates = 'ratings_small.csv' if opt==2 else 'ratings.csv'
+            links = 'links_small.csv' if opt==2 else 'links.csv'
+            files = ['movies_metadata.csv','credits.csv',rates,links]
+            dataProcessor = Data_Process(opt,files)
             valid_val = False
-    files = ['movies_metadata.csv','credits.csv',rates,'links_small.csv']
-    
-    #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
-    with Pool(4) as p:
-        movs,creds,rats,links = p.map(read_data,files)
-    
-    rats = pd.read_csv(rates)
- 
+
     print("STEP 1 Just Read in CSVs")
     
     uniq_movs = rats.movieId.unique()
@@ -68,10 +55,7 @@ if __name__ == '__main__':
     #print("STEP 2 Filtered for unique movies and users in ratings csv ")
 
     
-    rats.drop('timestamp',axis=1, inplace=True)
-    print("STEP 3 Pivotting User Ratings csv to create SIM MATRIX\n")
-    sim_mat = rats.pivot(index='userId',columns='movieId')
-    sim_mat.fillna(0,inplace=True)
+
     
     #sim_mat.rename(columns = {sim_mat.columns : uniq_movs.sort()})
     
