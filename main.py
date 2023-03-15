@@ -47,16 +47,12 @@ if __name__ == '__main__':
             files = ['movies_metadata.csv','credits.csv',rates,links]
             dataProcessor = Data_Process(opt,files)
             valid_val = False
-
-    print("STEP 1 Just Read in CSVs")
     
     uniq_movs = rats.movieId.unique()
     #uniq_usrs = rats.userId.unique()
     #print("STEP 2 Filtered for unique movies and users in ratings csv ")
 
-    
 
-    
     #sim_mat.rename(columns = {sim_mat.columns : uniq_movs.sort()})
     
     #TODO: EMBEDDINGS????

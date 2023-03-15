@@ -12,22 +12,24 @@ class Data_Process:
         #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
         with Pool(4) as p:
             self.movs,self.creds,self.rats,self.links = p.map(read_data,files)
-        self.id_map = create_map()
         
+        self.id_map,self.sim_mat = create_map()
+            
+    
     def create_map(self):
         temp_map = self.links
         temp_map.set_index('movieId',inplace=True)
         temp_map.drop('imbdId',axis=1,inplace=True)
         self.rats.drop('timestamp',axis=1, inplace=True)
-        print("STEP 3 Pivotting User Ratings csv to create SIM MATRIX\n")
+        filter_foreign_movies(temp_map)
+        create_sim_mat()
         
     def create_sim_mat(self):
-        sim_mat = rats.pivot(index='userId',columns='movieId')
-        sim_mat.fillna(0,inplace=True)
+        self.sim_mat = self.rats.pivot(index='userId',columns='movieId')
+        self.sim_mat.fillna(0,inplace=True)
         
+    def filter_foreign_movies(self,tmp_map):
         
-    def filter_foreign_movies(rats,links,movs):
-    
         
     def read_data(x):
         if x == 'movies_metadata.csv':
