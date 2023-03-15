@@ -6,7 +6,7 @@ import numpy as np
 
 def read_data(x):
     if x == 'movies_metadata.csv':
-        return pd.read_csv(x,usecols=["id","original_title"],dtype={"id":float,"original_title":"string"})
+        return pd.read_csv(x,usecols=["id","original_title"],dtype={"id":"string","original_title":"string"})
     else:
         return pd.read_csv(x)
     
@@ -60,7 +60,7 @@ if __name__ == '__main__':
  
     print("STEP 1 Just Read in CSVs")
     
-    #uniq_movs = rats.movieId.unique()
+    uniq_movs = rats.movieId.unique()
     #uniq_usrs = rats.userId.unique()
     #print("STEP 2 Filtered for unique movies and users in ratings csv ")
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
         print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
         print("PRESENTING FILMS NOW......")
-        rand_movie_gen(sim_mat,movs,links)
+        rand_movie_gen(uniq_movs,movs,links)
     elif (user_opt == 3):
         print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
         print("HOPE TO SEE YOU SOON!\n")
