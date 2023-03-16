@@ -56,46 +56,41 @@ if __name__ == '__main__':
         else:
             rates = 'ratings_small.csv' if opt==2 else 'ratings.csv'
             valid_val = False
-    files = ['movies_metadata.csv','credits.csv',rates,'links_small.csv']
+    files = ['movies_metadata.csv',rates,'links_small.csv']
     
     #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
     with Pool(4) as p:
-        movs,creds,rats,links = p.map(read_data,files)
-    
-    rats = pd.read_csv(rates)
+        movs,rats,links = p.map(read_data,files)
  
     print("STEP 1 Just Read in CSVs")
     
     uniq_movs = rats.movieId.unique()
     #uniq_usrs = rats.userId.unique()
     #print("STEP 2 Filtered for unique movies and users in ratings csv ")
-
     
-    rats.drop('timestamp',axis=1, inplace=True)
     print("STEP 3 Pivotting User Ratings csv to create SIM MATRIX\n")
+    rats.drop('timestamp',axis=1, inplace=True)
     sim_mat = rats.pivot(index='userId',columns='movieId',values='rating')
     sim_mat.fillna(0,inplace=True)
-    
-    #TODO: EMBEDDINGS????
+
+
+    print("STEP 4 ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
     gd_mat = sim_mat.to_numpy(dtype=float)
     u_d = len(gd_mat)
     m_d= len(gd_mat[0])
-
     U = np.random.rand(u_d,10)
     M = np.random.rand(m_d,10)
-    print("STEP 4 ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
-    #U,M = gradient(gd_mat, U, M.T, .0025, 5000)    
+    U,M = gradient(gd_mat, U, M.T, .0025, 5000)    
     
     print("STEP 5 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
     reco_mat = np.dot(U,M.T)
     
-    #TURN INTO PANDAS DATAFRAME
-    reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
-
+    
     print("STEP 6 Writing to csv files")
-    #sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
-    #reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
-    #orig_mat = np.where(gd_mat != 0, 1, 0)
+    reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
+    sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
+    reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
+    orig_mat = np.where(gd_mat != 0, 1, 0)
     
     user_opt = 0
     valid_opts = [1,2,3]
