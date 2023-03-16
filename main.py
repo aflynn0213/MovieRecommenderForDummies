@@ -21,12 +21,10 @@ if __name__ == '__main__':
             valid_val = False
  
     print("STEP 1 Just Read in CSVs")
-    uniq_movs = rats.movieId.unique()
-    #uniq_usrs = rats.userId.unique()
     
     print("STEP 3 Pivotting User Ratings csv to create SIM MATRIX\n")
-    rats.drop('timestamp',axis=1, inplace=True)
-    sim_mat = rats.pivot(index='userId',columns='movieId',values='rating')
+    dp.rates.drop('timestamp',axis=1, inplace=True)
+    sim_mat = dp.rates.pivot(index='userId',columns='movieId',values='rating')
     sim_mat.fillna(0,inplace=True)
 
     
@@ -34,8 +32,8 @@ if __name__ == '__main__':
     #TURN SIM_MAT INTO NUMPY FOR MATRIX FACTORIZER OPERATIONS
     gd_mat = sim_mat.to_numpy(dtype=float)
     #INTIALIZING MATRIX FACTORIZER OBJECT
-    mf = MatrixFactorizer()
-    mf.gradient(gd_mat,.0025, 5000)    
+    mf = MatrixFactorizer(gd_mat)
+    mf.gradient(.0025, 5000)    
     
     print("STEP 5 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
     reco_mat = np.dot(mf.U,mf.M.T)
@@ -64,8 +62,8 @@ if __name__ == '__main__':
             top10 = temp_row.nlargest(10)
             print("RESULTS.......")
             count = 1
-            for top in top10.index:
-                title = dp.fetch_title(movs, dp.moviedId_tmdbId_map(links, top))
+            for film in top10.index:
+                title = dp.fetch_title(dp.moviedId_tmdbId_map(film))
                 time.sleep(2.5)
                 print(str(count)+") "+title)
                 count+=1
@@ -77,7 +75,7 @@ if __name__ == '__main__':
         print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
         print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
         print("PRESENTING FILMS NOW......")
-        dp.rand_movie_gen(uniq_movs,movs,links)
+        dp.rand_movie_rater(uniq_movs)
 
     elif (user_opt == 3):
         print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")

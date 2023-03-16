@@ -37,8 +37,8 @@ class MatrixFactorizer:
                     if A[j][k]!=0:
                         err[j][k]=A[j][k]-np.dot(U[j,:],M[:,k])
                         for f in range(feats):    
-                            temp_U = U[j][f]+stepsize*(2*err[j][k]*M[f][k]-2/us*U[j][f]) 
-                            temp_M = M[f][k]+stepsize*(2*err[j][k]*U[j][f]-2/ms*M[f][k]) 
+                            temp_U = U[j][f]+stepsize*(2*err[j][k]*M[f][k]-.02*U[j][f]) 
+                            temp_M = M[f][k]+stepsize*(2*err[j][k]*U[j][f]-.02*M[f][k]) 
                             U[j][f] = temp_U
                             M[f][k] = temp_M
 
@@ -48,7 +48,7 @@ class MatrixFactorizer:
                     if A[j][k]!=0:
                         diff += crdnl*(A[j][k]-np.dot(U[j,:],M[:,k]))**2
                         for f in range(feats):
-                            diff+=(1/len(A)*(pow(U[j][f],2)+1/len(A[0])*pow(M[f][k],2)))
+                            diff+=.01*(pow(U[j][f],2)+pow(M[f][k],2))
 
             if (diff<0.01):
                 break

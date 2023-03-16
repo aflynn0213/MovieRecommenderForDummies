@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from multiprocessing import Pool
 
+
 class DataProcessor:
 
     def __init__(self,size):
@@ -17,10 +18,14 @@ class DataProcessor:
 
         #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
         with Pool(3) as p:
-            self.movies,self.rats,self.links = p.map(self.read_data,files)
+            self.movies,self.rates,self.links = p.map(self.read_data,files)
             
+        self.links.set_index("movieId",inplace=True)
+        self.movies.set_index("id",inplace=True)
+        self.uniq_movs = self.rates.movieId.unique()
+        self.uniq_usrs = self.rates.userId.unique()
         
-    def rand_movie_gen(self,uniq_mov,moves,links):
+    def rand_movie_rater(self):
         movie_count = 1
         movie_dict = {}
         val_rates = [1,1.5,2,2.5,3,3.5,4,4.5,5,6]
@@ -30,9 +35,9 @@ class DataProcessor:
             title = "INVALID"
             while (title=="INVALID"):
                 rando = np.random.random_integers(0,len(uniq_mov)-1)
-                rando = uniq_mov[rando]
-                tmdb = moviedId_tmdbId_map(links, rando)
-                title = fetch_title(moves, tmdb)
+                rando = self.uniq_movs[rando]
+                tmdb = self.moviedId_tmdbId_map(rando)
+                title = self.fetch_title(tmdb)
             
             print(title)
             rating = float(input("RATING: \n6 for next"))
@@ -43,14 +48,17 @@ class DataProcessor:
             else:
                 movie_dict[title]=rating
                 movie_count+=1
+        new_row = pd.DataFrame(movie_dict)
+        
+        
                 
-    def moviedId_tmdbId_map(self,links,mov_id):
-        temp = links.set_index("movieId")
+    def moviedId_tmdbId_map(self,mov_id):
+        temp = self.links
         tmdb = str(int(temp.at[mov_id,"tmdbId"]))
         return tmdb
         
-    def fetch_title(self,movies,_id):
-        temp = movies.set_index("id")
+    def fetch_title(self,_id):
+        temp = self.movies
         valid = _id in temp.index
         return (temp.at[_id,"original_title"] if valid else "INVALID")
     
