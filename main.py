@@ -5,8 +5,10 @@ import time
 
 #USER CREATED LIBRARIES
 from DataProcessor import DataProcessor
-from MatrixFactorizer import MatrixFactorizer
-    
+#from MatrixFactorizer import MatrixFactorizer
+import MatrixFactorizer as mf
+
+  
 if __name__ == '__main__':
     valid_val = True
     
@@ -22,6 +24,7 @@ if __name__ == '__main__':
  
     print("STEP 1 Just Read in CSVs")
     
+    
     print("STEP 3 Pivotting User Ratings csv to create SIM MATRIX\n")
     dp.rates.drop('timestamp',axis=1, inplace=True)
     sim_mat = dp.rates.pivot(index='userId',columns='movieId',values='rating')
@@ -32,12 +35,18 @@ if __name__ == '__main__':
     #TURN SIM_MAT INTO NUMPY FOR MATRIX FACTORIZER OPERATIONS
     gd_mat = sim_mat.to_numpy(dtype=float)
     #INTIALIZING MATRIX FACTORIZER OBJECT
-    mf = MatrixFactorizer(gd_mat)
-    mf.gradient(.0025, 5000)    
+    #mf = MatrixFactorizer(gd_mat)
+    u_d = len(gd_mat)
+    m_d = len(gd_mat[0])
+    U = np.random.rand(u_d,10)
+    M = np.random.rand(m_d,10)
+    U,M = mf.gradient(gd_mat,U,M.T,.0025, 5000)    
+
     
     print("STEP 5 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
-    reco_mat = np.dot(mf.U,mf.M.T)
+    reco_mat = np.dot(U,M.T)
     
+
     print("STEP 6 Writing to csv files")
     #TURN INTO PANDAS DATAFRAME
     reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
