@@ -30,11 +30,11 @@ class DataProcessor:
         movie_dict = {}
         val_rates = [1,1.5,2,2.5,3,3.5,4,4.5,5,6]
         
-        while(movie_count < 20):
+        while(movie_count <= 20):
             print("\nMOVIE #"+str(movie_count))
             title = "INVALID"
             while (title=="INVALID"):
-                rando = np.random.random_integers(0,len(uniq_mov)-1)
+                rando = np.random.random_integers(0,len(self.uniq_movs)-1)
                 rando = self.uniq_movs[rando]
                 tmdb = self.moviedId_tmdbId_map(rando)
                 title = self.fetch_title(tmdb)
@@ -48,7 +48,7 @@ class DataProcessor:
             else:
                 movie_dict[title]=rating
                 movie_count+=1
-        new_row = pd.DataFrame(movie_dict)
+        #new_row = pd.DataFrame(movie_dict)
         
         
                 

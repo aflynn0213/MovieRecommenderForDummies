@@ -40,7 +40,7 @@ if __name__ == '__main__':
     m_d = len(gd_mat[0])
     U = np.random.rand(u_d,10)
     M = np.random.rand(m_d,10)
-    U,M = mf.gradient(gd_mat,U,M.T,.0025, 5000)    
+    U,M = mf.gradient(gd_mat,U,M.T,.0025, 5000,10)    
 
     
     print("STEP 5 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
         print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
         print("PRESENTING FILMS NOW......")
-        dp.rand_movie_rater(uniq_movs)
+        dp.rand_movie_rater()
 
     elif (user_opt == 3):
         print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
