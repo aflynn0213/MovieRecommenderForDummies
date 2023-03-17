@@ -9,31 +9,43 @@ import numpy as np
 def gradient(A,U,M,stepsize,maxiter,features):
     
     err = np.zeros((A.shape[0],A.shape[1]))
-    us = len(A)
-    ms = len(A[0])
+    users = len(A)
+    movies = len(A[0])
     stepsize = float(stepsize)
     
     for i in range(maxiter):
-        for j in range(us):
-            for k in range(ms):
+        for j in range(users):
+            for k in range(movies):
                 if A[j][k]!=0:
                     err[j][k]=A[j][k]-np.dot(U[j,:],M[:,k])
                     for f in range(features):    
-                        temp_U = U[j][f]+stepsize*(2*err[j][k]*M[f][k]-2/us*U[j][f]) 
-                        temp_M = M[f][k]+stepsize*(2*err[j][k]*U[j][f]-2/ms*M[f][k]) 
+                        temp_U = U[j][f]+stepsize*(2*err[j][k]*M[f][k]-2/float(users)*U[j][f]) 
+                        temp_M = M[f][k]+stepsize*(2*err[j][k]*U[j][f]-2/float(movies)*M[f][k]) 
                         U[j][f] = temp_U
                         M[f][k] = temp_M
         diff = 0
-        for j in range(len(A)):
-            for k in range(len(A[0])):
+        for j in range(users):
+            for k in range(movies):
                 if A[j][k]!=0:
-                    diff += 0.1*(A[j][k]-np.dot(U[j,:],M[:,k]))**2
+                    diff += 1/float(features)*(A[j][k]-np.dot(U[j,:],M[:,k]))**2
                     for f in range(features):
-                        diff+=(1/len(A)*(pow(U[j][f],2)+1/len(A[0])*pow(M[f][k],2)))
+                        diff+=(1/users)*(pow(U[j][f],2))+(1/movies)*(pow(M[f][k],2))
         if (diff<0.01):
             break
         
         return U,M.T
+
+def gradient_handler(sim_mat):
+    #TURN SIM_MAT INTO NUMPY FOR MATRIX FACTORIZER OPERATIONS
+    gd_mat = sim_mat.to_numpy(dtype=float)
+    #INTIALIZING MATRIX FACTORIZER OBJECT
+    #mf = MatrixFactorizer(gd_mat)
+    u_d = len(gd_mat)
+    m_d = len(gd_mat[0])
+    U = np.random.rand(u_d,10)
+    M = np.random.rand(m_d,10)
+    return gradient(gd_mat,U,M.T,.0025, 5000,10)
+
 '''
 class MatrixFactorizer:
     

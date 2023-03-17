@@ -24,11 +24,13 @@ class DataProcessor:
         self.movies.set_index("id",inplace=True)
         self.uniq_movs = self.rates.movieId.unique()
         self.uniq_usrs = self.rates.userId.unique()
+        self.newUserId = self.uniq_usrs.max()-1
+        self.rates.drop('timestamp',axis=1, inplace=True)
         
     def rand_movie_rater(self):
         movie_count = 1
         movie_dict = {}
-        val_rates = [1,1.5,2,2.5,3,3.5,4,4.5,5,6]
+        val_rates = ['1','1.5','2','2.5','3','3.5','4','4.5','5','6']
         
         while(movie_count <= 20):
             print("\nMOVIE #"+str(movie_count))
@@ -37,25 +39,29 @@ class DataProcessor:
                 rando = np.random.random_integers(0,len(self.uniq_movs)-1)
                 rando = self.uniq_movs[rando]
                 tmdb = self.moviedId_tmdbId_map(rando)
+                if tmdb == 'NaN':
+                    continue
                 title = self.fetch_title(tmdb)
             
             print(title)
-            rating = float(input("RATING: \n6 for next"))
+            rating = input("RATING: \n6 for next")
             if (rating not in val_rates):
                 print("TRY AGAIN INVALID OPTION\n")
             elif(rating==6):
                 print("OKAY DISPLAYING NEW MOVIE\n")
             else:
-                movie_dict[title]=rating
-                movie_count+=1
-        #new_row = pd.DataFrame(movie_dict)
-        
-        
+                movie_dict[rando]=[float(rating)]
+                movie_count+=1  
+        self.newUserId+=1
+        new_row = pd.DataFrame(movie_dict,index=[self.newUserId])
+        return new_row, self.newUserId
                 
     def moviedId_tmdbId_map(self,mov_id):
         temp = self.links
-        tmdb = str(int(temp.at[mov_id,"tmdbId"]))
-        return tmdb
+        if temp.at[mov_id,"tmdbId"] == 'NaN':
+            return 'NaN'
+        else:
+            return str(int(temp.at[mov_id,"tmdbId"]))
         
     def fetch_title(self,_id):
         temp = self.movies
