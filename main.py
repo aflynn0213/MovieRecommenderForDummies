@@ -48,8 +48,8 @@ if __name__ == '__main__':
     print("STEP 5 Writing to csv files")
     #TURN INTO PANDAS DATAFRAME
     reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
-    #sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
-    #reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
+    sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
+    reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
     #orig_mat = np.where(gd_mat != 0, 1, 0)
     
     user_opt = 0
