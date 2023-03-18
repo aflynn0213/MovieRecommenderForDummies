@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 #USER CREATED LIBRARIES
 from DataProcessor import DataProcessor
@@ -18,10 +19,10 @@ def topTenPresentation(dp,recoMat,userId):
         time.sleep(2.5)
         print(str(count)+") "+title)
         count+=1
-  
+
 if __name__ == '__main__':
     valid_val = True
-    
+
     while(valid_val):
         print("WOULD THE USER LIKE THE FULL DATABASE OR THE LITE VERSION: ")
         opt = int(input("1 - FULL\n2 - LITE (RECOMMENDED)\n"))
@@ -31,16 +32,31 @@ if __name__ == '__main__':
         else:
             dp = DataProcessor(opt)
             valid_val = False
- 
+
     print("STEP 1 Just Read in CSVs")
-    
-    
+
+
     print("STEP 2 Pivotting User Ratings csv to create SIM MATRIX")
     sim_mat = dp.rates.pivot(index='userId',columns='movieId',values='rating')
     sim_mat.fillna(0,inplace=True)
 
     print("STEP 3 ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
-    U,M = mf.gradient_handler(sim_mat)   
+    feat_arr = [2,5,10,20,30,40,50]
+    feat_dict = dict()
+    for i in range(len(feat_arr)):
+        print("Running Gradient Descent with " + str(feat_arr[i]) + " features")
+        U,M,err = mf.gradient_handler(sim_mat, feat_arr[i])
+        feat_dict[feat_arr[i]] = err
+    features = list(feat_dict.keys())
+    errors = list(feat_dict.values())
+    fig = plt.figure(figsize = (10, 5))
+    plt.plot(features, errors)
+    plt.xlabel("# Features")
+    plt.ylabel("Error")
+    plt.title("Plot of Error vs Features")
+    plt.show()
+    print("Number of Features w/ Minimum Error", feat_arr[i])
+    print("Error by # of features", feat_dict)
     
     print("STEP 4 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
     reco_mat = np.dot(U,M.T)
@@ -51,7 +67,7 @@ if __name__ == '__main__':
     sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
     reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
     #orig_mat = np.where(gd_mat != 0, 1, 0)
-    
+
     user_opt = 0
     valid_opts = [1,2,3]
     while(user_opt not in valid_opts):
@@ -64,9 +80,9 @@ if __name__ == '__main__':
         userID_input = int(input("USER ID: "))
         if (userID_input not in reco_mat.index):
             print("INVALID USER ID, EXITING......")
-        else:    
+        else:
             topTenPresentation(dp, reco_mat, userID_input)
-        
+
     elif (user_opt == 2):
         print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
         print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
@@ -77,12 +93,11 @@ if __name__ == '__main__':
         newRates,userId = dp.rand_movie_rater()
         sim_mat = sim_mat.append(newRates,ignore_index=True,sort=False)
         sim_mat.fillna(0,inplace=True)
-        U,M = mf.gradient_handler(sim_mat) 
+        U,M = mf.gradient_handler(sim_mat)
         reco_mat = np.dot(U,M.T)
         reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
         topTenPresentation(dp, reco_mat, userId)
-        
+
     elif (user_opt == 3):
         print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
         print("HOPE TO SEE YOU SOON!\n")
-
