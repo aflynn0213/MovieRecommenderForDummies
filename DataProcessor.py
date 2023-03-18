@@ -31,8 +31,9 @@ class DataProcessor:
         movie_count = 1
         movie_dict = {}
         val_rates = ['1','1.5','2','2.5','3','3.5','4','4.5','5','6']
+        total_movies = 1
         
-        while(movie_count <= 20):
+        while(movie_count<=20 and total_movies<=60):
             print("\nMOVIE #"+str(movie_count))
             title = "INVALID"
             while (title=="INVALID"):
@@ -47,11 +48,13 @@ class DataProcessor:
             rating = input("RATING: \n6 for next")
             if (rating not in val_rates):
                 print("TRY AGAIN INVALID OPTION\n")
-            elif(rating==6):
+            elif(rating=='6'):
                 print("OKAY DISPLAYING NEW MOVIE\n")
             else:
                 movie_dict[rando]=[float(rating)]
-                movie_count+=1  
+                movie_count+=1
+            total_movies += 1
+            
         self.newUserId+=1
         new_row = pd.DataFrame(movie_dict,index=[self.newUserId])
         return new_row, self.newUserId
