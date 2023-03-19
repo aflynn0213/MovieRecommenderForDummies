@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 16 01:25:48 2023
-
-@author: aflyn
-"""
 import numpy as np
 
 def gradient(A,U,M,stepsize,maxiter,features):

@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Mar 13 13:59:43 2023
 
-@author: aflyn
-"""
 import numpy as np
 import pandas as pd
 from multiprocessing import Pool
@@ -45,7 +41,7 @@ class DataProcessor:
                 title = self.fetch_title(tmdb)
             
             print(title)
-            rating = input("RATING: \n6 for next")
+            rating = input("RATING: \n6 for next\n")
             if (rating not in val_rates):
                 print("TRY AGAIN INVALID OPTION\n")
             elif(rating=='6'):
@@ -61,10 +57,11 @@ class DataProcessor:
                 
     def moviedId_tmdbId_map(self,mov_id):
         temp = self.links
-        if temp.at[mov_id,"tmdbId"] == 'NaN':
-            return 'NaN'
+        title = temp.at[mov_id,"tmdbId"]
+        if type(title) == float:
+            return 'SKIP, MOVIE TITLE  NOT FOUND'
         else:
-            return str(int(temp.at[mov_id,"tmdbId"]))
+            return str(int(title))
         
     def fetch_title(self,_id):
         temp = self.movies
