@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Mar 13 13:59:43 2023
 
-@author: aflyn
-"""
 import numpy as np
 import pandas as pd
 from multiprocessing import Pool
@@ -35,17 +31,17 @@ class DataProcessor:
         
         while(movie_count<=20 and total_movies<=60):
             print("\nMOVIE #"+str(movie_count))
-            title = "INVALID"
-            while (title=="INVALID"):
+            title = "NOT IN DATABASE"
+            while (title=="NOT IN DATABASE"):
                 rando = np.random.random_integers(0,len(self.uniq_movs)-1)
                 rando = self.uniq_movs[rando]
                 tmdb = self.moviedId_tmdbId_map(rando)
-                if tmdb == 'NaN':
+                if tmdb == 'SKIP, MOVIE TITLE  NOT FOUND':
                     continue
                 title = self.fetch_title(tmdb)
             
             print(title)
-            rating = input("RATING: \n6 for next")
+            rating = input("RATING: \n6 for next\n")
             if (rating not in val_rates):
                 print("TRY AGAIN INVALID OPTION\n")
             elif(rating=='6'):
@@ -61,15 +57,16 @@ class DataProcessor:
                 
     def moviedId_tmdbId_map(self,mov_id):
         temp = self.links
-        if temp.at[mov_id,"tmdbId"] == 'NaN':
-            return 'NaN'
+        tmdb = temp.at[mov_id,"tmdbId"]
+        if type(tmdb) == float:
+            return 'SKIP, MOVIE TITLE  NOT FOUND'
         else:
-            return str(int(temp.at[mov_id,"tmdbId"]))
+            return str(int(tmdb))
         
     def fetch_title(self,_id):
         temp = self.movies
         valid = _id in temp.index
-        return (temp.at[_id,"original_title"] if valid else "INVALID")
+        return (temp.at[_id,"original_title"] if valid else "NOT IN DATABASE")
     
     
     def read_data(self,x):
