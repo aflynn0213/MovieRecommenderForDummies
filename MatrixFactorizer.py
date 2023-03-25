@@ -28,7 +28,7 @@ def gradient(A,U,M,stepsize,maxiter,features):
         if (diff<0.01):
             break
 
-        return U,M.T, diff
+        return U,M, diff
 
 def gradient_handler(sim_mat, feat):
     #TURN SIM_MAT INTO NUMPY FOR MATRIX FACTORIZER OPERATIONS
@@ -38,8 +38,8 @@ def gradient_handler(sim_mat, feat):
     u_d = len(gd_mat)
     m_d = len(gd_mat[0])
     U = np.random.rand(u_d,feat)
-    M = np.random.rand(m_d,feat)
-    return gradient(gd_mat,U,M.T,.0025, 5000,feat)
+    M = np.random.rand(feat,m_d)
+    return gradient(gd_mat,U,M,.0025, 5000,feat)
 
 '''
 class MatrixFactorizer:
