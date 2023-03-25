@@ -18,9 +18,9 @@ class Engine:
     
     def __init__(self,opt):
         self.algorithm = opt
-        print("STEP 1 Reading in CSVs")
+        print("STEP Reading in CSVs")
         self.dp = self.get_size()
-        print("STEP 2 Pivotting User Ratings csv to create SIM MATRIX")
+        print("STEP Pivotting User Ratings csv to create SIM MATRIX")
         self.reco_mat = np.zeros(1)
         
     def get_size(self):
@@ -42,13 +42,6 @@ class Engine:
         
         self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
         self.common()
-                    
-    def run_cosine(self):
-        opt = int(input("1)USER-USER \n2)ITEM-ITEM\n"))
-        opt = opt if opt == 1 or opt ==2 else 1 
-        mat = cb.calc_similarity(self.dp.rates,opt)
-        mat.to_csv('CollaborativeFiltering.csv',encoding='utf-8')
-        return mat
     
     def run_gd(self):
         print("STEP ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
@@ -56,14 +49,21 @@ class Engine:
         U,M,err = mf.gradient_handler(A,20)
         
         print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
-        reco_mat = np.dot(U,M)
+        self.reco_mat = np.dot(U,M)
 
         print("STEP Writing to csv files")
         #TURN INTO PANDAS DATAFRAME
         #self.dp.rates.to_csv('original_matrix.csv',encoding='utf-8')
         #self.reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
         #orig_mat = np.where(gd_mat != 0, 1, 0)
-        return reco_mat
+ 
+    
+    def run_cosine(self):
+        opt = int(input("1)USER-USER \n2)ITEM-ITEM\n"))
+        opt = opt if opt == 1 or opt ==2 else 1 
+        self.dp.rates = self.dp.rates.fillna(0)
+        mat = cb.calc_similarity(self.dp.rates,opt)
+        mat.to_csv('CollaborativeFiltering.csv',encoding='utf-8')
 
     def common(self):
         user_opt = 0
@@ -95,8 +95,8 @@ class Engine:
                 if self.algorithm == 1:
                     A = self.dp.rates.fillna(0)
                     U,M,error = mf.gradient_handler(A,25)
-                    self.reco_mat = np.dot(U,M)
-                    self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
+                    A = np.dot(U,M)
+                    self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
                     self.dp.topTenPresentation(self.reco_mat, userId)
                 elif self.algorithm == 2:
                     print("TODO")
@@ -104,6 +104,7 @@ class Engine:
             elif (user_opt == 3):
                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
                 print("HOPE TO SEE YOU SOON!\n")
+                return False
             
             elif (user_opt==4):
                 feat_arr = [2,5,10,20,30,40,50]
@@ -115,7 +116,6 @@ class Engine:
                     feat_dict[i] = err
                 ky = min(feat_dict)
                 min_ky = min(feat_dict, key = lambda k:feat_dict[k])
-                fig = plt.figure(figsize = (10, 5))
                 plt.plot(feat_dict.keys(),feat_dict.values())
                 plt.xlabel("# Features")
                 plt.ylabel("Error")

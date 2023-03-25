@@ -11,7 +11,12 @@ import pandas as pd
 
 def calc_similarity(df,opt):
     norm = adjusted_cos(df,opt) 
-    labels,norm = df.index,norm if opt == 1 else df.columns,norm.T
+    if opt == 1: 
+        labels = df.index
+    elif opt == 2: 
+        labels = df.columns
+        norm = norm.T
+    np.array(norm)
     return pd.DataFrame(data=cosine_similarity(norm),columns=labels,index=labels)
     
 def adjusted_cos(df,opt):
@@ -19,6 +24,9 @@ def adjusted_cos(df,opt):
         return df.sub(df.mean(axis=1,skipna=True),axis=0)
     elif(opt==2):
         return df.sub(df.mean(axis=0,skipna=True),axis=1)
+    
+def compute_recommendations():
+    x = np.where(x==0,calc_average()+user_avg,x)
 
 '''class Collaborator:
     

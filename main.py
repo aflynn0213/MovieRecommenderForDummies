@@ -10,6 +10,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     eng = Engine(args.algorithm)
-    
-    eng.run()
+    run = True
+    while(run):
+        run = eng.run()
     
