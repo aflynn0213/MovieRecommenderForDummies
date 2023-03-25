@@ -39,7 +39,8 @@ if __name__ == '__main__':
     print("STEP 2 Pivotting User Ratings csv to create SIM MATRIX")
     sim_mat = dp.rates.pivot(index='userId',columns='movieId',values='rating')
     sim_mat.fillna(0,inplace=True)
-
+    test = Cosine_Collaborator(sim_mat)
+    
     print("STEP 3 ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
     U,M,err = mf.gradient_handler(sim_mat,20)
     
