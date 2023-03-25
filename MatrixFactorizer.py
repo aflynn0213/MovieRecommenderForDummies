@@ -3,7 +3,6 @@ import numpy as np
 
 def gradient(A,U,M,stepsize,maxiter,features):
 
-    err = np.zeros((A.shape[0],A.shape[1]))
     users = len(A)
     movies = len(A[0])
     stepsize = float(stepsize)
@@ -12,10 +11,10 @@ def gradient(A,U,M,stepsize,maxiter,features):
         for j in range(users):
             for k in range(movies):
                 if A[j][k]!=0:
-                    err[j][k]=A[j][k]-np.dot(U[j,:],M[:,k])
+                    err=A[j][k]-np.dot(U[j,:],M[:,k])
                     for f in range(features):
-                        temp_U = U[j][f]+stepsize*(2*err[j][k]*M[f][k]-2/float(users)*U[j][f])
-                        temp_M = M[f][k]+stepsize*(2*err[j][k]*U[j][f]-2/float(movies)*M[f][k])
+                        temp_U = U[j][f]+stepsize*(2*err*M[f][k]-2/float(users)*U[j][f])
+                        temp_M = M[f][k]+stepsize*(2*err*U[j][f]-2/float(movies)*M[f][k])
                         U[j][f] = temp_U
                         M[f][k] = temp_M
         diff = 0
