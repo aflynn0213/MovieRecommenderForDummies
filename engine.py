@@ -36,9 +36,9 @@ class Engine:
         
     def run(self):
         if (self.algorithm == 1):
-            self.reco_mat = self.run_gd()
+            self.run_gd()
         elif (self.algorithm == 2):
-            self.reco_mat = self.run_cosine()
+            self.run_cosine()
         
         self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
         self.common()
@@ -46,7 +46,7 @@ class Engine:
     def run_gd(self):
         print("STEP ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
         A = self.dp.rates
-        U,M,err = mf.gradient_handler(A,20)
+        U,M,err = mf.gradient(A,features=20)
         
         print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
         self.reco_mat = np.dot(U,M)
@@ -94,7 +94,7 @@ class Engine:
                 
                 if self.algorithm == 1:
                     A = self.dp.rates.fillna(0)
-                    U,M,error = mf.gradient_handler(A,25)
+                    U,M,error = mf.gradient(A,features=25)
                     A = np.dot(U,M)
                     self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
                     self.dp.topTenPresentation(self.reco_mat, userId)
@@ -112,7 +112,7 @@ class Engine:
                 for i in feat_arr:
                     print("Running Gradient Descent with " + str(i) + " features")
                     A = self.dp.rates
-                    U,M,err = mf.gradient_handler(A, i)
+                    U,M,err = mf.gradient(A, features=i)
                     feat_dict[i] = err
                 ky = min(feat_dict)
                 min_ky = min(feat_dict, key = lambda k:feat_dict[k])

@@ -25,9 +25,12 @@ def adjusted_cos(df,opt):
     elif(opt==2):
         return df.sub(df.mean(axis=0,skipna=True),axis=1)
     
-def compute_recommendations():
-    x = np.where(x==0,calc_average()+user_avg,x)
+def compute_recommendations(A):
+    A = np.where(A==0,calc_average()+user_avg,A)
 
+def calc_average():
+    return 0
+    
 '''class Collaborator:
     
     def __init__(self,df,opt):

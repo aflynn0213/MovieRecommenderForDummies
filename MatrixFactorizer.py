@@ -1,12 +1,30 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-def gradient(A,U,M,stepsize,maxiter,features):
+def gradient(A,features,stepsize=.025,maxiter=1500):
 
+    A=A.to_numpy(dtype=float)
     users = len(A)
     movies = len(A[0])
-    stepsize = float(stepsize)
+    U = np.random.rand(users,features)
+    M = np.random.rand(features,movies)
 
+    for i in range(maxiter):
+        err = A-np.dot(U,M)
+        regU=(1/float(users))*np.sum(np.sum(U**2,axis=1))
+        regM=(1/float(movies))*np.sum(np.sum(M**2,axis=0))
+        loss = np.sum(err**2)/float(features)+regU+regM
+        gradU = -2*np.dot(err,M.T)+np.divide(U,float(users))
+        gradM = -2*np.dot(U.T,err)+np.divide(M,float(movies))
+        U = U + stepsize*gradU
+        M = M + stepsize*gradM
+        if loss < 100:
+            print("FOUND LOCAL MIN")
+            break
+        
+    return U,M,loss
+
+'''    
     for i in range(maxiter):
         for j in range(users):
             for k in range(movies):
@@ -28,17 +46,7 @@ def gradient(A,U,M,stepsize,maxiter,features):
             break
 
         return U,M, diff
-
-def gradient_handler(sim_mat, feat):
-    #TURN SIM_MAT INTO NUMPY FOR MATRIX FACTORIZER OPERATIONS
-    gd_mat = sim_mat.to_numpy(dtype=float)
-    #INTIALIZING MATRIX FACTORIZER OBJECT
-    #mf = MatrixFactorizer(gd_mat)
-    u_d = len(gd_mat)
-    m_d = len(gd_mat[0])
-    U = np.random.rand(u_d,feat)
-    M = np.random.rand(feat,m_d)
-    return gradient(gd_mat,U,M,.0025, 5000,feat)
+'''
 
 '''
 class MatrixFactorizer:

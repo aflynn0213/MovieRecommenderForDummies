@@ -70,7 +70,7 @@ class DataProcessor:
         else:
             return pd.read_csv(x)
         
-    def topTenPresentation(recoMat,userId):
+    def topTenPresentation(self,recoMat,userId):
         temp_row = recoMat.loc[userId]
         top10 = temp_row.nlargest(10)
         print("RESULTS.......")
