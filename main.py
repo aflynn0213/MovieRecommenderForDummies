@@ -39,18 +39,19 @@ if __name__ == '__main__':
     print("STEP 2 Pivotting User Ratings csv to create SIM MATRIX")
     sim_mat = dp.rates.pivot(index='userId',columns='movieId',values='rating')
     sim_mat.fillna(0,inplace=True)
-
+    test = Cosine_Collaborator(sim_mat)
+    
     print("STEP 3 ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
-    U,M,err = mf.gradient_handler(sim_mat,25)
+    U,M,err = mf.gradient_handler(sim_mat,20)
     
     print("STEP 4 DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
-    reco_mat = np.dot(U,M.T)
+    reco_mat = np.dot(U,M)
 
     print("STEP 5 Writing to csv files")
     #TURN INTO PANDAS DATAFRAME
     reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
-    sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
-    reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
+    #sim_mat.to_csv('sim_mat.csv',encoding='utf-8')
+    #reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
     #orig_mat = np.where(gd_mat != 0, 1, 0)
 
     user_opt = 0
@@ -80,7 +81,7 @@ if __name__ == '__main__':
             sim_mat = sim_mat.append(newRates,ignore_index=True,sort=False)
             sim_mat.fillna(0,inplace=True)
             U,M,error = mf.gradient_handler(sim_mat,25)
-            reco_mat = np.dot(U,M.T)
+            reco_mat = np.dot(U,M)
             reco_mat = pd.DataFrame(reco_mat,index=sim_mat.index,columns=sim_mat.columns)
             topTenPresentation(dp, reco_mat, userId)
         
@@ -91,17 +92,18 @@ if __name__ == '__main__':
         elif (user_opt==4):
             feat_arr = [2,5,10,20,30,40,50]
             feat_dict = dict()
-            for i in range(len(feat_arr)):
-                print("Running Gradient Descent with " + str(feat_arr[i]) + " features")
-                U,M,err = mf.gradient_handler(sim_mat, feat_arr[i])
-                feat_dict[feat_arr[i]] = err
-            features = list(feat_dict.keys())
-            errors = list(feat_dict.values())
+            for i in feat_arr:
+                print("Running Gradient Descent with " + str(i) + " features")
+                U,M,err = mf.gradient_handler(sim_mat, i)
+                feat_dict[i] = err
+            ky = min(feat_dict)
+            min_ky = min(feat_dict, key = lambda k:feat_dict[k])
             fig = plt.figure(figsize = (10, 5))
-            plt.plot(features, errors)
+            plt.plot(feat_dict.keys(),feat_dict.values())
             plt.xlabel("# Features")
             plt.ylabel("Error")
             plt.title("Plot of Error vs Features")
             plt.show()
-            print("Number of Features w/ Minimum Error", feat_arr[i])
+            
+            print("Number of Features w/ Minimum Error: ", min_ky)
             print("Error by # of features", feat_dict)

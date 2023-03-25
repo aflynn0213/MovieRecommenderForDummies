@@ -36,8 +36,6 @@ class DataProcessor:
                 rando = np.random.random_integers(0,len(self.uniq_movs)-1)
                 rando = self.uniq_movs[rando]
                 tmdb = self.moviedId_tmdbId_map(rando)
-                if tmdb == 'SKIP, MOVIE TITLE  NOT FOUND':
-                    continue
                 title = self.fetch_title(tmdb)
             
             print(title)
@@ -58,19 +56,15 @@ class DataProcessor:
     def moviedId_tmdbId_map(self,mov_id):
         temp = self.links
         tmdb = temp.at[mov_id,"tmdbId"]
-        if type(tmdb) == float:
-            return 'SKIP, MOVIE TITLE  NOT FOUND'
-        else:
-            return str(int(tmdb))
+        return str(int(tmdb))
         
     def fetch_title(self,_id):
-        temp = self.movies
-        valid = _id in temp.index
-        return (temp.at[_id,"original_title"] if valid else "NOT IN DATABASE")
+        valid = _id in self.movies.index
+        return (self.movies.at[_id,"title"] if valid else "NOT IN DATABASE")
     
     
     def read_data(self,x):
         if x == 'movies_metadata.csv':
-            return (pd.read_csv(x,usecols=["id","original_language","original_title"],dtype={"id":"string","original_title":"string"}) [lambda m: m["original_language"]=="en"])
+            return (pd.read_csv(x,usecols=["id","original_language","title"],dtype={"id":"string","title":"string"})) #[lambda m: m["original_language"]=="en"])
         else:
             return pd.read_csv(x)
