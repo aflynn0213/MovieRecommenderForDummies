@@ -46,7 +46,7 @@ class Engine:
     def run_gd(self):
         print("STEP ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
         A = self.dp.rates
-        
+        A= A.fillna(0)
         U,M,err = mf.gradient(A,features=20)
         
         print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")

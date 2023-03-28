@@ -10,16 +10,17 @@ def gradient(A,features,stepsize=.025,maxiter=1500):
     M = np.random.rand(features,movies)
 
     for i in range(maxiter):
-        err = np.where(A!=0,A-np.dot(U,M),0)
-        regU=(1/float(users))*np.sum(np.sum(U**2,axis=1))
-        regM=(1/float(movies))*np.sum(np.sum(M**2,axis=0))
-        loss = np.sum(err**2)/float(features)+regU+regM
+        err = np.where(A!=0,np.subtract(A,np.dot(U,M)),0)
+        count = np.sum(np.where(A!=0,1,0))
+        #regU=(1/float(users))*np.sum(np.sum(U**2,axis=1))
+        #regM=(1/float(movies))*np.sum(np.sum(M**2,axis=0))
+        loss = np.sum(err**2)/float(count)#+regU+regM
         gradU = -2*np.dot(err,M.T)+np.divide(U,float(users))
         gradM = -2*np.dot(U.T,err)+np.divide(M,float(movies))
         U = U + stepsize*gradU
         M = M + stepsize*gradM
  
-        if loss < 100:
+        if loss < 1:
             print("FOUND LOCAL MIN")
             break
 
