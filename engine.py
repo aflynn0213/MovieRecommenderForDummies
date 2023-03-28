@@ -22,6 +22,7 @@ class Engine:
         self.dp = self.get_size()
         print("STEP Pivotting User Ratings csv to create SIM MATRIX")
         self.reco_mat = np.zeros(1)
+        self.cos = np.zeros(1)
         
     def get_size(self):
         while(1):
@@ -39,18 +40,19 @@ class Engine:
             self.run_gd()
         elif (self.algorithm == 2):
             self.run_cosine()
-        
-        self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
+            
         self.common()
     
     def run_gd(self):
         print("STEP ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
         A = self.dp.rates
+        
         U,M,err = mf.gradient(A,features=20)
         
         print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
         self.reco_mat = np.dot(U,M)
-
+        self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
+        
         print("STEP Writing to csv files")
         #TURN INTO PANDAS DATAFRAME
         #self.dp.rates.to_csv('original_matrix.csv',encoding='utf-8')
@@ -60,10 +62,9 @@ class Engine:
     
     def run_cosine(self):
         opt = int(input("1)USER-USER \n2)ITEM-ITEM\n"))
-        opt = opt if opt == 1 or opt ==2 else 1 
-        self.dp.rates = self.dp.rates.fillna(0)
-        mat = cb.calc_similarity(self.dp.rates,opt)
-        mat.to_csv('CollaborativeFiltering.csv',encoding='utf-8')
+        opt = opt if opt == 1 or opt ==2 else 1
+        self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,opt)
+        #self.cos.to_csv('CollaborativeFiltering.csv',encoding='utf-8')
 
     def common(self):
         user_opt = 0
@@ -76,12 +77,20 @@ class Engine:
                 continue 
             
             elif (user_opt == 1):
-                userID_input = int(input("USER ID: "))
-                if (userID_input not in self.reco_mat.index):
-                    print("INVALID USER ID, EXITING......")
-                else:
-                    self.dp.topTenPresentation(self.reco_mat, userID_input)
-            
+                if self.algorithm == 1:
+                    userID_input = int(input("USER ID: "))
+                    if (userID_input not in self.reco_mat.index):
+                        print("INVALID USER ID, EXITING......")
+                    else:
+                        self.dp.topTenPresentation(self.reco_mat, userID_input)
+                elif self.algorithm == 2:
+                    userID_input = int(input("USER ID: "))
+                    if (userID_input not in self.reco_mat.index):
+                        print("INVALID USER ID, EXITING......")
+                    else:
+                        self.reco_mat.loc[userID_input] = cb.get_recommendations(self.reco_mat,self.cos,userID_input)
+                        self.dp.topTenPresentation(self.reco_mat, userID_input)
+   
             elif (user_opt == 2):
                 print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
                 print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
@@ -99,7 +108,9 @@ class Engine:
                     self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
                     self.dp.topTenPresentation(self.reco_mat, userId)
                 elif self.algorithm == 2:
-                    print("TODO")
+                    self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
+                    self.reco_mat.loc[userId] = cb.get_recommendations(self.reco_mat,self.cos,userId)
+                    self.dp.topTenPresentation(self.reco_mat, userId)
                     
             elif (user_opt == 3):
                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")

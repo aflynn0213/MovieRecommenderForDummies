@@ -24,6 +24,7 @@ class DataProcessor:
         self.rates.drop('timestamp',axis=1, inplace=True)
         self.rates = self.rates.pivot(index='userId',columns='movieId',values='rating')
         
+        
     def rand_movie_rater(self):
         movie_count = 1
         movie_dict = {}
