@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 
+#returns cosine similarity values matrix and the cosine similarity matrix
 def calc_similarity(df,opt):
     norm = adjusted_cos(df,opt) 
     if opt == 1: 
