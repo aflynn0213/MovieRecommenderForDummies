@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import pandas as pd
 from multiprocessing import Pool
-
+import time
+import numpy as np
 
 class DataProcessor:
 
@@ -22,6 +22,8 @@ class DataProcessor:
         self.uniq_usrs = self.rates.userId.unique()
         self.newUserId = self.uniq_usrs.max()-1
         self.rates.drop('timestamp',axis=1, inplace=True)
+        self.rates = self.rates.pivot(index='userId',columns='movieId',values='rating')
+        
         
     def rand_movie_rater(self):
         movie_count = 1
@@ -68,3 +70,14 @@ class DataProcessor:
             return (pd.read_csv(x,usecols=["id","original_language","title"],dtype={"id":"string","title":"string"})) #[lambda m: m["original_language"]=="en"])
         else:
             return pd.read_csv(x)
+        
+    def topTenPresentation(self,recoMat,userId):
+        temp_row = recoMat.loc[userId]
+        top10 = temp_row.nlargest(10)
+        print("RESULTS.......")
+        count = 1
+        for film in top10.index:
+            title = self.fetch_title(self.moviedId_tmdbId_map(film))
+            time.sleep(2.5)
+            print(str(count)+") "+title)
+            count+=1
