@@ -21,6 +21,7 @@ class DataProcessor:
         self.uniq_movs = self.rates.movieId.unique()
         self.uniq_usrs = self.rates.userId.unique()
         self.newUserId = self.uniq_usrs.max()-1
+        self.ratings = self.rates
         self.rates.drop('timestamp',axis=1, inplace=True)
         self.rates = self.rates.pivot(index='userId',columns='movieId',values='rating')
         

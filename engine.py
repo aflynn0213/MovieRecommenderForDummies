@@ -12,7 +12,12 @@ import pandas as pd
 from DataProcessor import DataProcessor
 import MatrixFactorizer as mf
 import Collaborator as cb
-
+from surprise import Reader, Dataset, SVD, SVDpp, BaselineOnly
+from surprise.model_selection import cross_validate
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+#from recommenders.utils.timer import Timer
+#from recommenders.models.surprise.surprise_utils import predict
 
 class Engine:
     
@@ -44,16 +49,42 @@ class Engine:
         self.common()
     
     def run_gd(self):
-        print("STEP ABOUT TO RUN GRADIENT DESCENT ON USER AND MOVIE MATRICES")
-        A = self.dp.rates
+        print("STEP ABOUT TO RUN SVD ON USER AND MOVIE MATRICES")
+        A = self.dp.ratings
         A= A.fillna(0)
-        U,M,err = mf.gradient(A,features=20)
+        scores = []
+        reader = Reader(rating_scale=(1,5))
+        ratings = Dataset.load_from_df(A[['userId','movieId','rating']], reader) 
+        cv_scores = cross_validate(SVD(), ratings, measures=['RMSE','MAE'], cv=3, verbose=True)
+        scores_df = pd.DataFrame.from_dict(cv_scores).mean(axis=0)
+        scores_df = scores_df.append(pd.Series([str(SVD()).split(" ")[0].split('.')[-1]], index=['Algorithm']))
+        scores.append(scores_df)
+        print("Error scores for SVD")
+        print(scores)
         
-        print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
-        self.reco_mat = np.dot(U,M)
-        self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
+        #Train and Predict with SVD using ALS
+        #options = {}
+        print('Train & Predict with SVD using Alternating Least Squares')
+        tr, te = train_test_split(ratings, test_size=0.25)
+        svd = SVD(random_state=0, n_factors=250, n_epochs=30, verbose=True)
+        #with Timer() as train_time:
+        svd.fit(tr)
+        #print("Took {} seconds for training.".format(train_time.interval))
+        #cross_validate(svd, ratings, measures=['RMSE'], cv=3, verbose=False)
+       
+        pred = svd.fit(tr).test(te)
+        #predictions = predict(svd, te, usercol='userID', itemcol='itemID')
+        #predictions.head()
+        print("Accuracy Score using RMSE")
+        print(accuracy_score.rmse(pred))
+        #U,M,err = mf.gradient(A,features=20)
         
-        print("STEP Writing to csv files")
+        
+        #print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
+        #self.reco_mat = np.dot(U,M)
+        #self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
+        
+        #print("STEP Writing to csv files")
         #TURN INTO PANDAS DATAFRAME
         #self.dp.rates.to_csv('original_matrix.csv',encoding='utf-8')
         #self.reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
@@ -82,6 +113,7 @@ class Engine:
                     if (userID_input not in self.reco_mat.index):
                         print("INVALID USER ID, EXITING......")
                     else:
+                        
                         self.dp.topTenPresentation(self.reco_mat, userID_input)
                 elif self.algorithm == 2:
                     userID_input = int(input("USER ID: "))
@@ -118,6 +150,8 @@ class Engine:
                 return False
             
             elif (user_opt==4):
+                
+                
                 feat_arr = [2,5,10,20,30,40,50]
                 feat_dict = dict()
                 for i in feat_arr:
