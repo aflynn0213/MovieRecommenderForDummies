@@ -44,7 +44,7 @@ class Engine:
         if (self.algorithm == 1):
             self.run_gd()
         elif (self.algorithm == 2):
-            self.run_cosine()
+            self.run_kNN()
             
         self.common()
     
@@ -100,15 +100,22 @@ class Engine:
         #orig_mat = np.where(gd_mat != 0, 1, 0)
  
     
-    def run_cosine(self):
+    def run_kNN(self):
         A = self.dp.ratings
         reader = Reader(rating_scale=(1,5))
         ratings = Dataset.load_from_df(A, reader=reader) 
-        params = {'k': [10, 20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [5, 10,20],'user_based': [True,False]}}
+        params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [False]}}
         tr, te = train_test_split(ratings, test_size=0.25)
+        
         knnZcv = GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=None,refit=True,return_train_measures=True,n_jobs=-1)
-        self.reco_mat = knnZcv.fit(ratings)
-        print(knnZcv.best_params["rmse"],knnZcv.best_score["rmse"],knnZcv.cv_results)
+        knnMcv = GridSearchCV(KNNWithMeans, param_grid=params,measures=["rmse","mae"],cv=None,refit=True,return_train_measures=True,n_jobs=-1)
+        knnBcv = GridSearchCV(KNNBasic, param_grid=params,measures=["rmse","mae"],cv=None,refit=True,return_train_measures=True,n_jobs=-1)
+        
+        knnZcv.fit(ratings)
+        knnMcv.fit(ratings)
+        knnBcv.fit(ratings)
+
+        print(knnZcv.best_params["rmse"],knnZcv.best_score["rmse"])
        
         preds = knnZcv.test(te)
         #self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
