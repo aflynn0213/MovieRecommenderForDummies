@@ -3,11 +3,11 @@ import argparse
 
 #USER CREATED LIBRARIES
 from DataProcessor import DataProcessor
-import Collaborator as cb
+#import Collaborator as cb
 
 from surprise import Reader, Dataset, SVD, SVDpp, BaselineOnly
 from surprise.model_selection import cross_validate
-from sklearn.model_selection import train_test_split
+from surprise.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from surprise.prediction_algorithms.knns import KNNBasic
 from surprise.prediction_algorithms.knns import KNNWithMeans
@@ -105,7 +105,6 @@ class Engine:
         reader = Reader(rating_scale=(1,5))
         ratings = Dataset.load_from_df(A, reader=reader) 
         params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [False]}}
-        #tr, te = train_test_split(ratings, test_size=0.25)
         
         knnZcv = GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
         knnMcv = GridSearchCV(KNNWithMeans, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
@@ -114,19 +113,40 @@ class Engine:
         knnZcv.fit(ratings)
         knnMcv.fit(ratings)
         knnBcv.fit(ratings)
+        
+        print(knnZcv.best_score["rmse"])
+        print(knnMcv.best_score["rmse"])
+        print(knnBcv.best_score["rmse"])
 
-        print(knnZcv.best_params["rmse"],knnZcv.best_score["rmse"])
-       
-        preds = knnZcv.test(te)
-        #self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
-        #self.cos.to_csv('CollaborativeFiltering.csv',encoding='utf-8')
+        algZ = knnZcv.best_estimator["rmse"]
+        algM = knnMcv.best_estimator["rmse"]
+        algB = knnBcv.best_estimator["rmse"]
+        
+        tr = ratings.build_full_trainset()
+        te = fullTrain.build_anti_testset(fill=0)
+
+        #tr, te = train_test_split(ratings, test_size=0.25)
+
+        algZ.fit(tr)#fullTrain)
+        algM.fit(tr)#fullTrain)
+        algB.fit(tr)#fullTrain)
+
+        predsB = algB.test(te)
+        predsM = algM.test(te)
+        predsZ = algZ.test(te)
+        
+        print(predsB)
+        print(predsM)
+        print(predsZ)
+
+        self.reco_mat = algZ
 
     def common(self):
         user_opt = 0
         valid_opts = [1,2,3,4]
         while(user_opt != 3):
             print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
-            user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n4)METRICS\n"))
+            user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
             if (user_opt not in valid_opts):
                 print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
                 continue 
@@ -134,18 +154,17 @@ class Engine:
             elif (user_opt == 1):
                 if self.algorithm == 1:
                     userID_input = int(input("USER ID: "))
-                    if (userID_input not in self.reco_mat.index):
-                        print("INVALID USER ID, EXITING......")
-                    else:
-                        
-                        self.dp.topTenPresentation(self.reco_mat, userID_input)
+                    #if (userID_input not in self.reco_mat.index):
+                    #    print("INVALID USER ID, EXITING......")
+                    #else:
+                        #self.dp.topTenPresentation(self.reco_mat, userID_input)
                 elif self.algorithm == 2:
-                    userID_input = int(input("USER ID: "))
-                    if (userID_input not in self.reco_mat.index):
-                        print("INVALID USER ID, EXITING......")
-                    else:
-                        self.reco_mat.loc[userID_input] = cb.get_recommendations(self.reco_mat,self.cos,userID_input)
-                        self.dp.topTenPresentation(self.reco_mat, userID_input)
+                    #userID_input = int(input("USER ID: "))
+                    #if (userID_input not in self.reco_mat.index):
+                    #    print("INVALID USER ID, EXITING......")
+                    #else:
+                    #    self.reco_mat.loc[userID_input] = cb.get_recommendations(self.reco_mat,self.cos,userID_input)
+                    #    self.dp.topTenPresentation(self.reco_mat, userID_input)
    
             elif (user_opt == 2):
                 print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
@@ -158,41 +177,20 @@ class Engine:
                 self.dp.rates = self.dp.rates.append(newRates,ignore_index=True,sort=False)
                 
                 if self.algorithm == 1:
-                    A = self.dp.rates.fillna(0)
-                    U,M,error = mf.gradient(A,features=25)
-                    A = np.dot(U,M)
-                    self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
-                    self.dp.topTenPresentation(self.reco_mat, userId)
+                    #A = self.dp.rates.fillna(0)
+                    #U,M,error = mf.gradient(A,features=25)
+                    #A = np.dot(U,M)
+                    #self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
+                    #self.dp.topTenPresentation(self.reco_mat, userId)
                 elif self.algorithm == 2:
-                    self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
-                    self.reco_mat.loc[userId] = cb.get_recommendations(self.reco_mat,self.cos,userId)
-                    self.dp.topTenPresentation(self.reco_mat, userId)
+                    #self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
+                    #self.reco_mat.loc[userId] = cb.get_recommendations(self.reco_mat,self.cos,userId)
+                    #self.dp.topTenPresentation(self.reco_mat, userId)
                     
             elif (user_opt == 3):
                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
                 print("HOPE TO SEE YOU SOON!\n")
                 return False
-            
-            elif (user_opt==4):
-                
-                
-                feat_arr = [2,5,10,20,30,40,50]
-                feat_dict = dict()
-                for i in feat_arr:
-                    print("Running Gradient Descent with " + str(i) + " features")
-                    A = self.dp.rates
-                    U,M,err = mf.gradient(A, features=i)
-                    feat_dict[i] = err
-                ky = min(feat_dict)
-                min_ky = min(feat_dict, key = lambda k:feat_dict[k])
-                plt.plot(feat_dict.keys(),feat_dict.values())
-                plt.xlabel("# Features")
-                plt.ylabel("Error")
-                plt.title("Plot of Error vs Features")
-                plt.show()
-                
-                print("Number of Features w/ Minimum Error: ", min_ky)
-                print("Error by # of features", feat_dict)
 
    
 if __name__ == '__main__':
