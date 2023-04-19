@@ -123,7 +123,7 @@ class Engine:
         algB = knnBcv.best_estimator["rmse"]
         
         tr = ratings.build_full_trainset()
-        te = fullTrain.build_anti_testset(fill=0)
+        te = tr.build_anti_testset(fill=0)
 
         #tr, te = train_test_split(ratings, test_size=0.25)
 
