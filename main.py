@@ -42,13 +42,14 @@ class Engine:
         
     def run(self):
         if (self.algorithm == 1):
-            self.run_gd()
+            self.run_mf()
         elif (self.algorithm == 2):
             self.run_kNN()
             
         self.common()
     
-    def run_gd(self):
+    def run_mf(self): 
+        #JARROD TODO (ADD,EDIT,CLEAN UP) #########################################
         print("STEP ABOUT TO RUN SVD ON USER AND MOVIE MATRICES")
         A = self.dp.ratings
         A= A.fillna(0)
@@ -99,7 +100,9 @@ class Engine:
         #self.reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
         #orig_mat = np.where(gd_mat != 0, 1, 0)
  
-    
+        
+        #JARROD TODO (ADD,EDIT,CLEAN UP)################################################################
+
     def run_kNN(self):
         A = self.dp.ratings
         reader = Reader(rating_scale=(1,5))
