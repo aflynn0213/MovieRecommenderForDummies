@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from DataProcessor import DataProcessor
 
 from surprise import Reader, Dataset, SVD, SVDpp, BaselineOnly
 from surprise.model_selection import cross_validate
