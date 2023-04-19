@@ -52,6 +52,15 @@ class Engine:
         print("STEP ABOUT TO RUN SVD ON USER AND MOVIE MATRICES")
         A = self.dp.ratings
         A= A.fillna(0)
+        results = []
+        reader = Reader(rating_scale=(1,5))
+        ratings_data = Dataset.load_from_df(A[['userId','movieId','rating']], reader) 
+        for alg in [SVD(), SVDpp(), BaselineOnly()]:  
+            cv_results = cross_validate(alg, ratings_data, measures=['RMSE','MAE'], cv=3, verbose=True)
+            results_df = pd.DataFrame.from_dict(cv_results).mean(axis=0)
+            results_df = results_df.append(pd.Series([str(alg).split('')[0].split('.')[-1]], index=['Algorithm']))
+            results.append(results_df)
+        print(results)
         scores = []
         reader = Reader(rating_scale=(1,5))
         ratings = Dataset.load_from_df(A[['userId','movieId','rating']], reader) 
