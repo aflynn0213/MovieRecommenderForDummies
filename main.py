@@ -105,11 +105,11 @@ class Engine:
         reader = Reader(rating_scale=(1,5))
         ratings = Dataset.load_from_df(A, reader=reader) 
         params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [False]}}
-        tr, te = train_test_split(ratings, test_size=0.25)
+        #tr, te = train_test_split(ratings, test_size=0.25)
         
-        knnZcv = GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=None,refit=True,return_train_measures=True,n_jobs=-1)
-        knnMcv = GridSearchCV(KNNWithMeans, param_grid=params,measures=["rmse","mae"],cv=None,refit=True,return_train_measures=True,n_jobs=-1)
-        knnBcv = GridSearchCV(KNNBasic, param_grid=params,measures=["rmse","mae"],cv=None,refit=True,return_train_measures=True,n_jobs=-1)
+        knnZcv = GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
+        knnMcv = GridSearchCV(KNNWithMeans, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
+        knnBcv = GridSearchCV(KNNBasic, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
         
         knnZcv.fit(ratings)
         knnMcv.fit(ratings)
