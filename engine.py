@@ -21,9 +21,9 @@ class Engine:
         print("STEP Reading in CSVs")
         self.dp = DataProcessor()
         print("STEP Pivotting User Ratings csv to create SIM MATRIX")
-        self.reader = reader = Reader(rating_scale=(1,5)) 
+        self.reader = Reader(rating_scale=(1,5)) 
         self.data = Dataset.load_from_df(self.dp.ratings,self.reader)
-        self.fullTrain = ratings.build_full_trainset()
+        self.fullTrain = self.data.build_full_trainset()
         self.antiTest = self.fullTrain.build_anti_testset(fill=0)
         
 
@@ -38,26 +38,40 @@ class Engine:
     def run_mf(self): 
         cv_df = []
         
-        SVD_Alg = SVD(verbose=True)
-        SVDpp_Alg = SVDpp(cache_ratings=True,verbose=True)
-        params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01]}
-        
+        params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True]}
+        params_pp = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True], 'cache_ratings':[True]}
+         
         min_score = 100000
         best_alg = SVD()
-        print("STEP Performing SVD and SVDpp GridSearchCV")
-        for alg in [SVD_Alg, SVDpp_Alg]:   
-            algCV = GridSearchCV(alg, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)   
-            algCV.fit(self.data)
-            cv_df.append(pd.DataFrame.from_dict(algCB.cv_results))
-            print("RMSE scores for" + str(alg) + ": ")
-            print(algCV.best_score["rmse"])
-            print("With Parameters: ",algCV.best_params["rmse"])
-            tmp_score = algCV.best_score["rmse"]
-            if (tmp_score<min_score):
+        print("STEP Performing SVD GridSearchCV")
+        algCV = GridSearchCV(SVD, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)   
+        algCV.fit(self.data)
+        cv_df.append(pd.DataFrame.from_dict(algCV.cv_results))
+        print("RMSE scores for" + "SVD " + ": ")
+        print(algCV.best_score["rmse"])
+        print("With Parameters: ",algCV.best_params["rmse"])
+        tmp_score = algCV.best_score["rmse"]
+        if (tmp_score<min_score):
                 min_score = tmp_score
                 best_alg = algCV
 
+        
+        print("STEP Performing SVDpp GridSearchCV")
+        algCV = GridSearchCV(SVDpp, param_grid=params_pp,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)   
+        algCV.fit(self.data)
+        cv_df.append(pd.DataFrame.from_dict(algCV.cv_results))
+        print("RMSE scores for" + "SVDpp " + ": ")
+        print(algCV.best_score["rmse"])
+        print("With Parameters: ",algCV.best_params["rmse"])
+        tmp_score = algCV.best_score["rmse"]
+        if (tmp_score<min_score):
+                min_score = tmp_score
+                best_alg = algCV
+        
+        print("SVD GRIDSEARCH")
         print(cv_df[0])
+        
+        print("SVDpp GRIDSEARCH")
         print(cv_df[1])
 
         print("STEP Performing ALS and SGD Comparison")
@@ -135,7 +149,7 @@ class Engine:
                 continue 
             elif (user_opt == 1):
                 userID_input = int(input("USER ID: "))
-                if (self.fullTrain.knows_user(userID_input):
+                if (self.fullTrain.knows_user(userID_input)):
                     print("INVALID USER ID, EXITING......")
                 else:
                     self.dp.topTenPresentation(self.preds, userID_input)    
@@ -150,7 +164,9 @@ class Engine:
                 #self.dp.rates = self.dp.rates.append(newRates,ignore_index=True,sort=False)
                  
                 if self.algorithm == 1:
-                elif self.algorithm == 2:      
+                    return
+                elif self.algorithm == 2:  
+                    return
             elif (user_opt == 3):
                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
                 print("HOPE TO SEE YOU SOON!\n")
