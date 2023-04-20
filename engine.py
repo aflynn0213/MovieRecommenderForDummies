@@ -36,7 +36,7 @@ class Engine:
         self.common()
     
     def run_mf(self): 
-        svds = []
+        cv_df = []
         
         SVD_Alg = SVD(verbose=True)
         SVDpp_Alg = SVDpp(cache_ratings=True,verbose=True)
@@ -48,24 +48,28 @@ class Engine:
         for alg in [SVD_Alg, SVDpp_Alg]:   
             algCV = GridSearchCV(alg, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)   
             algCV.fit(self.data)
-            #cv_df = pd.DataFrame.from_dict(cv).mean(axis=0)
-            #cv_df = cv_df.append(pd.Series([str(alg).split(" ")[0].split('.')[-1]], index=['Algorithm']))
-            print("RMSE scores for" + str(alg) + ":")
+            cv_df.append(pd.DataFrame.from_dict(algCB.cv_results))
+            print("RMSE scores for" + str(alg) + ": ")
             print(algCV.best_score["rmse"])
             print("With Parameters: ",algCV.best_params["rmse"])
-            #print(cv_df)
             tmp_score = algCV.best_score["rmse"]
             if (tmp_score<min_score):
                 min_score = tmp_score
                 best_alg = algCV
 
+        print(cv_df[0])
+        print(cv_df[1])
+
         print("STEP Performing ALS and SGD Comparison")
         params = {'bsl_options':{'method': ['als','sgd']}}
         baselineCV = GridSearchCV(BaselineOnly, param_grid=params,measures=["rmse","mae"],cv=10,refit=True,n_jobs=-1)
         baselineCV.fit(self.data)
-        
+        cv_dfBase = pd.DataFrame.from_dict(baselineCV.cv_results)
+
+        print("RMSE scores for" + "BaselineOnly" + ": ")
         print(baselineCV.best_score["rmse"])
-        print(baselineCV.best_params["rmse"])
+        print("With Parameters: ",baselineCV.best_params["rmse"])
+        print(cv_dfBase)
         
         baslin = baselineCV.best_score["rmse"]
         svd_alg = best_alg.best_score["rmse"]
