@@ -18,21 +18,10 @@ class Engine:
     def __init__(self,opt):
         self.algorithm = opt
         print("STEP Reading in CSVs")
-        self.dp = self.get_size()
+        self.dp = DataProcessor()
         print("STEP Pivotting User Ratings csv to create SIM MATRIX")
         self.reco_mat = np.zeros(1)
         self.cos = np.zeros(1)
-        
-    def get_size(self):
-        while(1):
-            print("WOULD THE USER LIKE THE FULL DATABASE OR THE LITE VERSION: ")
-            size = int(input("1 - FULL\n2 - LITE (RECOMMENDED)\n"))
-            if (size != 1 and size != 2):
-                print("INVALID VALUE! TRY AGAIN")
-                continue
-            else:
-                dp = DataProcessor(size)
-                return dp
         
     def run(self):
         if (self.algorithm == 1):
@@ -57,6 +46,7 @@ class Engine:
             results.append(results_df)
         print(results)
         scores = []
+
         reader = Reader(rating_scale=(1,5))
         ratings = Dataset.load_from_df(A[['userId','movieId','rating']], reader) 
         cv_scores = cross_validate(SVD(), ratings, measures=['RMSE','MAE'], cv=3, verbose=True)
@@ -75,6 +65,26 @@ class Engine:
         svd.fit(tr)
         #print("Took {} seconds for training.".format(train_time.interval))
         #cross_validate(svd, ratings, measures=['RMSE'], cv=3, verbose=False)
+
+        for alg in [SVDpp(cache_ratings=True,init_mean=2.5,verbose=True)]:
+            #params = {'n_epochs': [5,10],'lr_all':[0.001,0.005],'reg_all': [0.2,0.6]}
+# =============================================================================
+#             algCV = GridSearchCV(alg, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
+#             algCV.fit(ratings)
+#             print(algCV.best_score["rmse"])
+#             alg_best = algCV.best_estimator["rmse"]
+#             train, test = train_test_split(ratings, test_size=0.25)
+#             alg_best.fit(train)
+# =============================================================================
+            cv = cross_validate(alg, ratings, measures=['RMSE','MAE'], cv=4, verbose=True,n_jobs=-1)
+            cv_df = pd.DataFrame.from_dict(cv).mean(axis=0)
+            cv_df = cv_df.append(pd.Series([str(alg).split(" ")[0].split('.')[-1]], index=['Algorithm']))
+            scores.append(cv_df)
+            print("RMSE scores for" + str(alg) + ":")
+            print(scores)
+            #pred = alg_best.test(test)
+            #print(pred)
+
        
         pred = svd.fit(tr).test(te)
         #predictions = predict(svd, te, usercol='userID', itemcol='itemID')
@@ -83,6 +93,9 @@ class Engine:
         print(accuracy_score.rmse(pred))
         #U,M,err = mf.gradient(A,features=20)
         
+        params = {'bsl_options':{'method': ['als','sgd']}}
+        #baseline = BaselineOnly(params)
+        baselineCV = GridSearchCV(BaselineOnly, param_grid=params,measures=["rmse","mae"],cv=10,refit=True,n_jobs=-1)
         
         #print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
         #self.reco_mat = np.dot(U,M)

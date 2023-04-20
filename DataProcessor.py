@@ -7,9 +7,9 @@ import numpy as np
 
 class DataProcessor:
 
-    def __init__(self,size):
-        rates = 'ratings_small.csv' if size==2 else 'ratings.csv'
-        links = 'links_small.csv' if size==2 else 'links.csv'
+    def __init__(self):
+        rates = 'ratings_small.csv'
+        links = 'links_small.csv'
         files = ['movies_metadata.csv',rates,links]
 
         #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
