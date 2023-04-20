@@ -139,7 +139,7 @@ class Engine:
                     print("INVALID USER ID, EXITING......")
                 else:
                     self.dp.topTenPresentation(self.preds, userID_input)    
-             elif (user_opt == 2):
+            elif (user_opt == 2):
                 print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
                 print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
                 print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
@@ -151,8 +151,8 @@ class Engine:
                  
                 if self.algorithm == 1:
                 elif self.algorithm == 2:      
-             elif (user_opt == 3):
-                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
-                 print("HOPE TO SEE YOU SOON!\n")
-                 return False
+            elif (user_opt == 3):
+                print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
+                print("HOPE TO SEE YOU SOON!\n")
+                return False
 
