@@ -13,10 +13,6 @@ from surprise.model_selection.search import GridSearchCV
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-<<<<<<< HEAD
-=======
-from DataProcessor import DataProcessor
->>>>>>> jarrods_local
 
 class Engine:
     
@@ -41,11 +37,9 @@ class Engine:
         reader = Reader(rating_scale=(1,5))      
         ratings = Dataset.load_from_df(A, reader)
         scores = []
-
-        reader = Reader(rating_scale=(1,5))
-        ratings = Dataset.load_from_df(A[['userId','movieId','rating']], reader) 
-
-        for alg in [SVDpp(cache_ratings=True,init_mean=2.5,verbose=True)]:
+        SVD_Alg = SVD(verbose=True)
+        SVDpp_Alg = SVDpp(cache_ratings=True,verbose=True)
+        for alg in [SVD_Alg, SVDpp_Alg]:
             #params = {'n_epochs': [5,10],'lr_all':[0.001,0.005],'reg_all': [0.2,0.6]}
 # =============================================================================
 #             algCV = GridSearchCV(alg, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
@@ -72,14 +66,14 @@ class Engine:
         baselineCV.fit(ratings)
         
         print(baselineCV.best_score["rmse"])
-        
+        print(baselineCV.best_params["rmse"])
         algA = baselineCV.best_estimator["rmse"]
         
         train, test = train_test_split(ratings, test_size=0.25)
         
         algA.fit(train)
         
-        predB= algA.test(test)
+        predB = algA.test(test)
         #print(predB)
 
         #self.reco_mat = algA
@@ -91,7 +85,7 @@ class Engine:
         A = self.dp.ratings
         reader = Reader(rating_scale=(1,5))
         ratings = Dataset.load_from_df(A, reader=reader) 
-        params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [False]}}
+        params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [True]}}
         
         knnZcv = GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
         knnMcv = GridSearchCV(KNNWithMeans, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
@@ -109,6 +103,8 @@ class Engine:
         algM = knnMcv.best_estimator["rmse"]
         algB = knnBcv.best_estimator["rmse"]
         
+        print(algZ)
+        
         tr = ratings.build_full_trainset()
         te = tr.build_anti_testset(fill=0)
 
@@ -121,10 +117,6 @@ class Engine:
         predsB = algB.test(te)
         predsM = algM.test(te)
         predsZ = algZ.test(te)
-        
-        print(predsB)
-        print(predsM)
-        print(predsZ)
 
         self.reco_mat = algZ
 
