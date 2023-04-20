@@ -130,10 +130,6 @@ class Engine:
         algM.fit(self.fullTrain)
         algB.fit(self.fullTrain)
 
-        predsB = algB.test(self.antiTest)
-        predsM = algM.test(self.antiTest)
-        predsZ = algZ.test(self.antiTest)
-
         predictions = alg_objs[min_i].best_estimator["rmse"].fit(self.fullTrain).test(self.antiTest)
         self.preds = predictions
 
