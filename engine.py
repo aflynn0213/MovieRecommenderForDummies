@@ -21,9 +21,12 @@ class Engine:
         print("STEP Reading in CSVs")
         self.dp = DataProcessor()
         print("STEP Pivotting User Ratings csv to create SIM MATRIX")
-        self.reco_mat = np.zeros(1)
-        self.cos = np.zeros(1)
+        self.reader = reader = Reader(rating_scale=(1,5)) 
+        self.data = Dataset.load_from_df(self.dp.ratings,self.reader)
+        self.fullTrain = ratings.build_full_trainset()
+        self.antiTest = self.fullTrain.build_anti_testset(fill=0)
         
+
     def run(self):
         if (self.algorithm == 1):
             self.run_mf()
@@ -33,143 +36,126 @@ class Engine:
         self.common()
     
     def run_mf(self): 
-        A = self.dp.ratings
-        reader = Reader(rating_scale=(1,5))      
-        ratings = Dataset.load_from_df(A, reader)
-        scores = []
+        svds = []
+        
         SVD_Alg = SVD(verbose=True)
         SVDpp_Alg = SVDpp(cache_ratings=True,verbose=True)
-        for alg in [SVD_Alg, SVDpp_Alg]:
-            #params = {'n_epochs': [5,10],'lr_all':[0.001,0.005],'reg_all': [0.2,0.6]}
-# =============================================================================
-#             algCV = GridSearchCV(alg, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
-#             algCV.fit(ratings)
-#             print(algCV.best_score["rmse"])
-#             alg_best = algCV.best_estimator["rmse"]
-#             train, test = train_test_split(ratings, test_size=0.25)
-#             alg_best.fit(train)
-# =============================================================================
-            cv = cross_validate(alg, ratings, measures=['RMSE','MAE'], cv=4, verbose=True,n_jobs=-1)
-            cv_df = pd.DataFrame.from_dict(cv).mean(axis=0)
-            cv_df = cv_df.append(pd.Series([str(alg).split(" ")[0].split('.')[-1]], index=['Algorithm']))
-            scores.append(cv_df)
-            print("RMSE scores for" + str(alg) + ":")
-            print(scores)
-            #pred = alg_best.test(test)
-            #print(pred)
-
-        params = {'bsl_options':{'method': ['als','sgd']}}
-        #baseline = BaselineOnly(params)
-        baselineCV = GridSearchCV(BaselineOnly, param_grid=params,measures=["rmse","mae"],cv=10,refit=True,n_jobs=-1)
-
+        params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01]}
         
-        baselineCV.fit(ratings)
+        min_score = 100000
+        best_alg = SVD()
+        print("STEP Performing SVD and SVDpp GridSearchCV")
+        for alg in [SVD_Alg, SVDpp_Alg]:   
+            algCV = GridSearchCV(alg, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)   
+            algCV.fit(self.data)
+            #cv_df = pd.DataFrame.from_dict(cv).mean(axis=0)
+            #cv_df = cv_df.append(pd.Series([str(alg).split(" ")[0].split('.')[-1]], index=['Algorithm']))
+            print("RMSE scores for" + str(alg) + ":")
+            print(algCV.best_score["rmse"])
+            print("With Parameters: ",algCV.best_params["rmse"])
+            #print(cv_df)
+            tmp_score = algCV.best_score["rmse"]
+            if (tmp_score<min_score):
+                min_score = tmp_score
+                best_alg = algCV
+
+        print("STEP Performing ALS and SGD Comparison")
+        params = {'bsl_options':{'method': ['als','sgd']}}
+        baselineCV = GridSearchCV(BaselineOnly, param_grid=params,measures=["rmse","mae"],cv=10,refit=True,n_jobs=-1)
+        baselineCV.fit(self.data)
         
         print(baselineCV.best_score["rmse"])
         print(baselineCV.best_params["rmse"])
-        algA = baselineCV.best_estimator["rmse"]
         
-        train, test = train_test_split(ratings, test_size=0.25)
-        
-        algA.fit(train)
-        
-        predB = algA.test(test)
-        #print(predB)
+        baslin = baselineCV.best_score["rmse"]
+        svd_alg = best_alg.best_score["rmse"]
 
-        #self.reco_mat = algA
-        #print("RMSE for Baseline ALS")
-        #accuracy.rmse(predict)
+        if (baslin < svd_alg):
+            best_alg = baselineCV.best_estimator["rmse"]
+        else:
+            best_alg = best_alg.best_estimator["rmse"]
+
+        predictions = best_alg.fit(self.fullTrain).test(self.antiTest)
+        self.preds = predictions
         
 
     def run_kNN(self):
-        A = self.dp.ratings
-        reader = Reader(rating_scale=(1,5))
-        ratings = Dataset.load_from_df(A, reader=reader) 
         params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [True]}}
+        alg_objs = []
         
-        knnZcv = GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
-        knnMcv = GridSearchCV(KNNWithMeans, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
-        knnBcv = GridSearchCV(KNNBasic, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
+        for alg in [KNNWithZScore, KNNWithMeans, KNNBasic]:
+            alg_objs.append(GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1))
         
-        knnZcv.fit(ratings)
-        knnMcv.fit(ratings)
-        knnBcv.fit(ratings)
+        alg_objs[0].fit(self.data)
+        alg_objs[1].fit(self.data)
+        alg_objs[2].fit(self.data)
         
-        print(knnZcv.best_score["rmse"])
-        print(knnMcv.best_score["rmse"])
-        print(knnBcv.best_score["rmse"])
+        print(alg_objs[0].best_score["rmse"])
+        print(alg_objs[1].best_score["rmse"])
+        print(alg_objs[2].best_score["rmse"])
 
-        algZ = knnZcv.best_estimator["rmse"]
-        algM = knnMcv.best_estimator["rmse"]
-        algB = knnBcv.best_estimator["rmse"]
-        
-        print(algZ)
-        
-        tr = ratings.build_full_trainset()
-        te = tr.build_anti_testset(fill=0)
+        min_score = 100000
+        min_i = 0
+        for i in range(len(alg_objs)):
+            tmp_score = alg_objs[i].best_score["rmse"]
+            if (tmp_score<min_score):
+                min_score = tmp_score
+                min_i = i
+
+        algZ = alg_objs[0].best_estimator["rmse"]
+        algM = alg_objs[1].best_estimator["rmse"]
+        algB = alg_objs[2].best_estimator["rmse"]
 
         #tr, te = train_test_split(ratings, test_size=0.25)
 
-        algZ.fit(tr)#fullTrain)
-        algM.fit(tr)#fullTrain)
-        algB.fit(tr)#fullTrain)
+        algZ.fit(self.fullTrain)
+        algM.fit(self.fullTrain)
+        algB.fit(self.fullTrain)
 
-        predsB = algB.test(te)
-        predsM = algM.test(te)
-        predsZ = algZ.test(te)
+        predsB = algB.test(self.antiTest)
+        predsM = algM.test(self.antiTest)
+        predsZ = algZ.test(self.antiTest)
 
-        self.reco_mat = algZ
+        predictions = alg_objs[min_i].best_estimator["rmse"].fit(self.fullTrain).test(self.antiTest)
+        self.preds = predictions
 
     def common(self):
         user_opt = 0
         valid_opts = [1,2,3,4]
-# =============================================================================
-#         while(user_opt != 3):
-#             print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
-#             user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
-#             if (user_opt not in valid_opts):
-#                 print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
-#                 continue 
-#             
-#             elif (user_opt == 1):
-#                 if self.algorithm == 1:
-#                     userID_input = int(input("USER ID: "))
-#                     #if (userID_input not in self.reco_mat.index):
-#                     #    print("INVALID USER ID, EXITING......")
-#                     #else:
-#                         #self.dp.topTenPresentation(self.reco_mat, userID_input)
-#                 elif self.algorithm == 2:
-#                     #userID_input = int(input("USER ID: "))
-#                     #if (userID_input not in self.reco_mat.index):
-#                     #    print("INVALID USER ID, EXITING......")
-#                     #else:
-#                     #    self.reco_mat.loc[userID_input] = cb.get_recommendations(self.reco_mat,self.cos,userID_input)
-#                     #    self.dp.topTenPresentation(self.reco_mat, userID_input)
-#    
-#             elif (user_opt == 2):
-#                 print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
-#                 print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
-#                 print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
-#                 print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
-#                 print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
-#                 print("PRESENTING FILMS NOW......")
-#                 newRates,userId = self.dp.rand_movie_rater()
-#                 self.dp.rates = self.dp.rates.append(newRates,ignore_index=True,sort=False)
-#                 
-#                 if self.algorithm == 1:
-#                     #A = self.dp.rates.fillna(0)
-#                     #U,M,error = mf.gradient(A,features=25)
-#                     #A = np.dot(U,M)
-#                     #self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
-#                     #self.dp.topTenPresentation(self.reco_mat, userId)
-#                     elif self.algorithm == 2:
-#                     #self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
-#                     #self.reco_mat.loc[userId] = cb.get_recommendations(self.reco_mat,self.cos,userId)
-#                     #self.dp.topTenPresentation(self.reco_mat, userId)
-#                     
-#             elif (user_opt == 3):
-#                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
-#                 print("HOPE TO SEE YOU SOON!\n")
-#                 return False
-# 
-# =============================================================================
+
+        while(user_opt != 3):
+            print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
+            user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
+            if (user_opt not in valid_opts):
+                print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
+                continue 
+            elif (user_opt == 1):
+                if self.algorithm == 1:
+                    userID_input = int(input("USER ID: "))
+                    if (self.fullTrain.knows_user(userID_input):
+                        print("INVALID USER ID, EXITING......")
+                    else:
+                        self.dp.topTenPresentation(self.preds, userID_input)
+                elif self.algorithm == 2:
+                    userID_input = int(input("USER ID: "))
+                    if (self.fullTrain.knows_user(userID_input):
+                        print("INVALID USER ID, EXITING......")
+                    else:
+                        self.dp.topTenPresentation(self.preds, userID_input)    
+             elif (user_opt == 2):
+                print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
+                print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
+                print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
+                print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
+                print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
+                print("PRESENTING FILMS NOW......")
+                newRates,userId = self.dp.rand_movie_rater()
+                #self.dp.rates = self.dp.rates.append(newRates,ignore_index=True,sort=False)
+                 
+                if self.algorithm == 1:
+                elif self.algorithm == 2:      
+             elif (user_opt == 3):
+                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
+                 print("HOPE TO SEE YOU SOON!\n")
+                 return False
+
