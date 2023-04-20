@@ -1,16 +1,19 @@
 #!/usr/bin/python3
 
-from surprise import Reader, Dataset, SVD, SVDpp, BaselineOnly
+from surprise import Reader, Dataset
 from surprise.model_selection import cross_validate
 from surprise.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from surprise.prediction_algorithms.knns import KNNBasic
 from surprise.prediction_algorithms.knns import KNNWithMeans
 from surprise.prediction_algorithms.knns import KNNWithZScore
+from surprise import SVD, SVDpp, BaselineOnly
 from surprise.model_selection.search import GridSearchCV
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from DataProcessor import DataProcessor
+
 class Engine:
     
     def __init__(self,opt):
@@ -41,59 +44,52 @@ class Engine:
         self.common()
     
     def run_mf(self): 
-        #JARROD TODO (ADD,EDIT,CLEAN UP) #########################################
-        print("STEP ABOUT TO RUN SVD ON USER AND MOVIE MATRICES")
         A = self.dp.ratings
-        A= A.fillna(0)
-        results = []
-        reader = Reader(rating_scale=(1,5))
-        ratings_data = Dataset.load_from_df(A[['userId','movieId','rating']], reader) 
-        for alg in [SVD(), SVDpp(), BaselineOnly()]:  
-            cv_results = cross_validate(alg, ratings_data, measures=['RMSE','MAE'], cv=3, verbose=True)
-            results_df = pd.DataFrame.from_dict(cv_results).mean(axis=0)
-            results_df = results_df.append(pd.Series([str(alg).split('')[0].split('.')[-1]], index=['Algorithm']))
-            results.append(results_df)
-        print(results)
+        reader = Reader(rating_scale=(1,5))      
+        ratings = Dataset.load_from_df(A, reader)
         scores = []
-        reader = Reader(rating_scale=(1,5))
-        ratings = Dataset.load_from_df(A[['userId','movieId','rating']], reader) 
-        cv_scores = cross_validate(SVD(), ratings, measures=['RMSE','MAE'], cv=3, verbose=True)
-        scores_df = pd.DataFrame.from_dict(cv_scores).mean(axis=0)
-        scores_df = scores_df.append(pd.Series([str(SVD()).split(" ")[0].split('.')[-1]], index=['Algorithm']))
-        scores.append(scores_df)
-        print("Error scores for SVD")
-        print(scores)
-        
-        #Train and Predict with SVD using ALS
-        #options = {}
-        print('Train & Predict with SVD using Alternating Least Squares')
-        tr, te = train_test_split(ratings, test_size=0.25)
-        svd = SVD(random_state=0, n_factors=250, n_epochs=30, verbose=True)
-        #with Timer() as train_time:
-        svd.fit(tr)
-        #print("Took {} seconds for training.".format(train_time.interval))
-        #cross_validate(svd, ratings, measures=['RMSE'], cv=3, verbose=False)
+        for alg in [SVD(), SVDpp()]:
+            #params = {'n_epochs': [5,10],'lr_all':[0.001,0.005],'reg_all': [0.2,0.6]}
+# =============================================================================
+#             algCV = GridSearchCV(alg, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
+#             algCV.fit(ratings)
+#             print(algCV.best_score["rmse"])
+#             alg_best = algCV.best_estimator["rmse"]
+#             train, test = train_test_split(ratings, test_size=0.25)
+#             alg_best.fit(train)
+# =============================================================================
+            cv = cross_validate(alg, ratings, measures=['RMSE','MAE'], cv=4, verbose=False)
+            cv_df = pd.DataFrame.from_dict(cv).mean(axis=0)
+            cv_df = cv_df.append(pd.Series([str(alg).split(" ")[0].split('.')[-1]], index=['Algorithm']))
+            scores.append(cv_df)
+            print("RMSE scores for" + str(alg) + ":")
+            print(scores)
+            #pred = alg_best.test(test)
+            #print(pred)
        
-        pred = svd.fit(tr).test(te)
-        #predictions = predict(svd, te, usercol='userID', itemcol='itemID')
-        #predictions.head()
-        print("Accuracy Score using RMSE")
-        print(accuracy_score.rmse(pred))
-        #U,M,err = mf.gradient(A,features=20)
+
         
+        params = {'method': ['als','sgd'],'random_state':250,'n_epochs': 5,'reg_u': 12,'reg_i': 5}
+        #baseline = BaselineOnly(params)
+        baselineCV = GridSearchCV(BaselineOnly, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)
         
-        #print("STEP DOTTING USER AND MOVIE MATRICES TO FORM RECOMMENDATION MATRIX")
-        #self.reco_mat = np.dot(U,M)
-        #self.reco_mat = pd.DataFrame(self.reco_mat,index=self.dp.rates.index,columns=self.dp.rates.columns)
+        baselineCV.fit(ratings)
         
-        #print("STEP Writing to csv files")
-        #TURN INTO PANDAS DATAFRAME
-        #self.dp.rates.to_csv('original_matrix.csv',encoding='utf-8')
-        #self.reco_mat.to_csv('recommendation_matrix.csv',encoding ='utf-8')
-        #orig_mat = np.where(gd_mat != 0, 1, 0)
- 
+        print(baselineCV.best_score["rmse"])
         
-        #JARROD TODO (ADD,EDIT,CLEAN UP)################################################################
+        algA = baselineCV.best_estimator["rmse"]
+        
+        train, test = train_test_split(ratings, test_size=0.25)
+        
+        algA.fit(train)
+        
+        predB= algA.test(test)
+        #print(predB)
+
+        #self.reco_mat = algA
+        #print("RMSE for Baseline ALS")
+        #accuracy.rmse(predict)
+        
 
     def run_kNN(self):
         A = self.dp.ratings
@@ -139,50 +135,53 @@ class Engine:
     def common(self):
         user_opt = 0
         valid_opts = [1,2,3,4]
-        while(user_opt != 3):
-            print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
-            user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
-            if (user_opt not in valid_opts):
-                print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
-                continue 
-            
-            elif (user_opt == 1):
-                if self.algorithm == 1:
-                    userID_input = int(input("USER ID: "))
-                    #if (userID_input not in self.reco_mat.index):
-                    #    print("INVALID USER ID, EXITING......")
-                    #else:
-                        #self.dp.topTenPresentation(self.reco_mat, userID_input)
-                elif self.algorithm == 2:
-                    #userID_input = int(input("USER ID: "))
-                    #if (userID_input not in self.reco_mat.index):
-                    #    print("INVALID USER ID, EXITING......")
-                    #else:
-                    #    self.reco_mat.loc[userID_input] = cb.get_recommendations(self.reco_mat,self.cos,userID_input)
-                    #    self.dp.topTenPresentation(self.reco_mat, userID_input)
-   
-            elif (user_opt == 2):
-                print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
-                print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
-                print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
-                print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
-                print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
-                print("PRESENTING FILMS NOW......")
-                newRates,userId = self.dp.rand_movie_rater()
-                self.dp.rates = self.dp.rates.append(newRates,ignore_index=True,sort=False)
-                
-                if self.algorithm == 1:
-                    #A = self.dp.rates.fillna(0)
-                    #U,M,error = mf.gradient(A,features=25)
-                    #A = np.dot(U,M)
-                    #self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
-                    #self.dp.topTenPresentation(self.reco_mat, userId)
-                elif self.algorithm == 2:
-                    #self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
-                    #self.reco_mat.loc[userId] = cb.get_recommendations(self.reco_mat,self.cos,userId)
-                    #self.dp.topTenPresentation(self.reco_mat, userId)
-                    
-            elif (user_opt == 3):
-                print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
-                print("HOPE TO SEE YOU SOON!\n")
-                return False
+# =============================================================================
+#         while(user_opt != 3):
+#             print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
+#             user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
+#             if (user_opt not in valid_opts):
+#                 print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
+#                 continue 
+#             
+#             elif (user_opt == 1):
+#                 if self.algorithm == 1:
+#                     userID_input = int(input("USER ID: "))
+#                     #if (userID_input not in self.reco_mat.index):
+#                     #    print("INVALID USER ID, EXITING......")
+#                     #else:
+#                         #self.dp.topTenPresentation(self.reco_mat, userID_input)
+#                 elif self.algorithm == 2:
+#                     #userID_input = int(input("USER ID: "))
+#                     #if (userID_input not in self.reco_mat.index):
+#                     #    print("INVALID USER ID, EXITING......")
+#                     #else:
+#                     #    self.reco_mat.loc[userID_input] = cb.get_recommendations(self.reco_mat,self.cos,userID_input)
+#                     #    self.dp.topTenPresentation(self.reco_mat, userID_input)
+#    
+#             elif (user_opt == 2):
+#                 print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
+#                 print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
+#                 print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
+#                 print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
+#                 print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
+#                 print("PRESENTING FILMS NOW......")
+#                 newRates,userId = self.dp.rand_movie_rater()
+#                 self.dp.rates = self.dp.rates.append(newRates,ignore_index=True,sort=False)
+#                 
+#                 if self.algorithm == 1:
+#                     #A = self.dp.rates.fillna(0)
+#                     #U,M,error = mf.gradient(A,features=25)
+#                     #A = np.dot(U,M)
+#                     #self.reco_mat = pd.DataFrame(A,index=self.dp.rates.index,columns=self.dp.rates.columns)
+#                     #self.dp.topTenPresentation(self.reco_mat, userId)
+#                     elif self.algorithm == 2:
+#                     #self.reco_mat,self.cos = cb.calc_similarity(self.dp.rates,1)
+#                     #self.reco_mat.loc[userId] = cb.get_recommendations(self.reco_mat,self.cos,userId)
+#                     #self.dp.topTenPresentation(self.reco_mat, userId)
+#                     
+#             elif (user_opt == 3):
+#                 print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
+#                 print("HOPE TO SEE YOU SOON!\n")
+#                 return False
+# 
+# =============================================================================
