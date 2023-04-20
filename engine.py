@@ -69,10 +69,10 @@ class Engine:
                 best_alg = algCV
         
         print("SVD GRIDSEARCH")
-        print(cv_df[0])
+        cv_df[0].to_csv('svd_gridsearch.csv')
         
         print("SVDpp GRIDSEARCH")
-        print(cv_df[1])
+        cv_df[1].to_csv('svdpp_gridsearch.csv')
 
         print("STEP Performing ALS and SGD Comparison")
         params = {'bsl_options':{'method': ['als','sgd']}}
@@ -83,7 +83,7 @@ class Engine:
         print("RMSE scores for" + "BaselineOnly" + ": ")
         print(baselineCV.best_score["rmse"])
         print("With Parameters: ",baselineCV.best_params["rmse"])
-        print(cv_dfBase)
+        cv_dfBase.to_csv('baseline_gridsearch.csv')
         
         baslin = baselineCV.best_score["rmse"]
         svd_alg = best_alg.best_score["rmse"]
