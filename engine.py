@@ -130,18 +130,11 @@ class Engine:
                 print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
                 continue 
             elif (user_opt == 1):
-                if self.algorithm == 1:
-                    userID_input = int(input("USER ID: "))
-                    if (self.fullTrain.knows_user(userID_input):
-                        print("INVALID USER ID, EXITING......")
-                    else:
-                        self.dp.topTenPresentation(self.preds, userID_input)
-                elif self.algorithm == 2:
-                    userID_input = int(input("USER ID: "))
-                    if (self.fullTrain.knows_user(userID_input):
-                        print("INVALID USER ID, EXITING......")
-                    else:
-                        self.dp.topTenPresentation(self.preds, userID_input)    
+                userID_input = int(input("USER ID: "))
+                if (self.fullTrain.knows_user(userID_input):
+                    print("INVALID USER ID, EXITING......")
+                else:
+                    self.dp.topTenPresentation(self.preds, userID_input)    
              elif (user_opt == 2):
                 print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
                 print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
