@@ -3,6 +3,7 @@ import pandas as pd
 from multiprocessing import Pool
 import time
 import numpy as np
+from collections import defaultdict
 
 class DataProcessor:
 
@@ -70,19 +71,4 @@ class DataProcessor:
             return (pd.read_csv(x,usecols=["id","original_language","title"],dtype={"id":"string","title":"string"})) #[lambda m: m["original_language"]=="en"])
         else:
             return pd.read_csv(x)
-
-    def topTenPresentation(self,predictions,userId):
-        n = 10
-        top_n = defaultdict(list)
-        for uid, iid, true_r, est, _ in predictions:
-            if (uid == userId):
-                top_n[iid].append(est)
-
-        # Then sort the predictions for each user and retrieve the k highest ones.
-        top_rated = dict(sorted(top_n.items(), key = lambda x: x[1], reverse = True)[:n])
-
-        for mId,_ in top_n.items():
-            title = self.fetch_title(self.moviedId_tmdbId_map(film))
-            time.sleep(2.5)
-            print(str(count)+") "+title)
-            count+=1 
+    
