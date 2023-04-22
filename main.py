@@ -16,20 +16,25 @@ def index():
 def select_user(algorithm):
     if request.method == 'POST':
         user_id = request.form['user_id']
+        return redirect(url_for('process', algorithm=algorithm, user_id=user_id))   
+    return render_template('select_user.html', algorithm=algorithm)
+
+@main.route('/process/<algorithm>/<user_id>', methods=['GET','POST'])
+def process(algorithm, user_id):
+    if request.method == 'POST':
         alg = 1 if algorithm == "SVD" else 2
         eng = Engine(alg)
         preds = eng.run()
-        recommendations = get_recommendations(preds, algorithm, user_id)
+        recommendations = get_recommendations(preds, user_id)
         recommendations = ', '.join(recommendations)
         return redirect(url_for('recommendations', algorithm=algorithm, user_id=user_id, recommendations=recommendations))
-   
-    return render_template('select_user.html', algorithm=algorithm)
+    return render_template('process.html', algorithm=algorithm, user_id=user_id)
 
 @main.route('/recommendations/<algorithm>/<user_id>/<recommendations>', methods=['GET'])
 def recommendations(algorithm, user_id, recommendations):
     return render_template('recommendations.html', algorithm=algorithm, user_id=user_id, recommendations=recommendations)
 
-def get_recommendations(preds, algorithm, user_id):
+def get_recommendations(preds, user_id):
     dp = DataProcessor()
     n = 10
     user_id = int(user_id)
