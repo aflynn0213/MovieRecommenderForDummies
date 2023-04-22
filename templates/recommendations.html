@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Movie Recommendations</title>
+  </head>
+  <body>
+    <h1>Movie Recommendations for User {{ user_id }}</h1>
+    <p>Based on the {{ algorithm }} algorithm:</p>
+    <ul>
+      {% for title in recommendations.split(',') %}
+        <li>{{ title.strip() }}</li>
+      {% endfor %}
+    </ul>
+    <form action="{{ url_for('index') }}" method="post">
+      <button type="submit">Back to Homepage</button>
+    </form>
+  </body>
+</html>

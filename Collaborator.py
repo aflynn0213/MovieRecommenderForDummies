@@ -40,7 +40,7 @@ def get_recommendations(A,cos,_id):
     movie_means = movie_means.to_numpy()
     print(movie_means)
     user_mean = A.loc[_id].mean(skipna=True)
-    A.loc[_id] = np.where(not_seen==1,movie_means,A.loc[_id])
+    A.loc[_id] = np.where(not_seen==1,movie_means,0)
     print(A.loc[_id])
     A.loc[_id]=A.loc[_id]+user_mean
     return A.loc[_id]

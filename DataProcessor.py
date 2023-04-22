@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-
 import pandas as pd
 from multiprocessing import Pool
 import time
 import numpy as np
+from collections import defaultdict
 
 class DataProcessor:
 
-    def __init__(self,size):
-        rates = 'ratings_small.csv' if size==2 else 'ratings.csv'
-        links = 'links_small.csv' if size==2 else 'links.csv'
+    def __init__(self):
+        rates = 'ratings_small.csv'
+        links = 'links_small.csv'
         files = ['movies_metadata.csv',rates,links]
 
         #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
@@ -21,8 +21,8 @@ class DataProcessor:
         self.uniq_movs = self.rates.movieId.unique()
         self.uniq_usrs = self.rates.userId.unique()
         self.newUserId = self.uniq_usrs.max()-1
-        self.ratings = self.rates
         self.rates.drop('timestamp',axis=1, inplace=True)
+        self.ratings = self.rates
         self.rates = self.rates.pivot(index='userId',columns='movieId',values='rating')
         
         
@@ -71,14 +71,4 @@ class DataProcessor:
             return (pd.read_csv(x,usecols=["id","original_language","title"],dtype={"id":"string","title":"string"})) #[lambda m: m["original_language"]=="en"])
         else:
             return pd.read_csv(x)
-        
-    def topTenPresentation(self,recoMat,userId):
-        temp_row = recoMat.loc[userId]
-        top10 = temp_row.nlargest(10)
-        print("RESULTS.......")
-        count = 1
-        for film in top10.index:
-            title = self.fetch_title(self.moviedId_tmdbId_map(film))
-            time.sleep(2.5)
-            print(str(count)+") "+title)
-            count+=1
+    
