@@ -13,7 +13,7 @@ class DataProcessor:
         files = ['movies_metadata.csv',rates,links]
 
         #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
-        with Pool(3) as p:
+        with Pool(processes=3) as p:
             self.movies,self.rates,self.links = p.map(self.read_data,files)
             
         self.links.set_index("movieId",inplace=True)
