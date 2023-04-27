@@ -64,6 +64,9 @@ def recommendations(algorithm, user_id, recommendations):
 
 @main.route('/rate_movie/<algorithm>', methods=['GET', 'POST'])
 def rate_movie(algorithm):
+    print(engines)
+    eng = engines[-1]  # get the last engine object added to the list
+
     if request.method == 'POST':
         # Get the movie ID and rating from the form submission
         movie_id = request.form['movie_id']
@@ -80,8 +83,6 @@ def rate_movie(algorithm):
             eng.run_new_user(movie_df)
             return redirect(url_for('process_2', algorithm=algorithm))
     
-    eng = engines[-1]  # get the last engine object added to the list
-
     title = "NOT IN DATABASE"
     while (title=="NOT IN DATABASE"):
         rando = random.randint(0, len(eng.dp.uniq_movs) - 1)
