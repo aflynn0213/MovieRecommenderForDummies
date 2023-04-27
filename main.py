@@ -36,7 +36,8 @@ def select_user(algorithm):
 @main.route('/metrics')
 def metrics():
     eng = Engine("METRICS")
-    return render_template('metrics.html')
+    results = eng.performance_df.to_dict()
+    return render_template('metrics.html', scores=results)
 
 @main.route('/process/<algorithm>/<user_id>', methods=['GET','POST'])
 def process(algorithm, user_id):
