@@ -50,13 +50,13 @@ class Engine:
             params = {'bsl_options':{'method': ['sgd'],'reg':[.02,.05],'learning_rate':[.005,.01,.02],'n_epochs':[15,20]}}
         elif self.algorithm == "KNNZ":
             algo = KNNWithZScore
-            params = {'sim_options': {'name': ['pearson', 'cosine'],'shrinkage':[100,75,50],'min_support': [7],'user_based': [True]},'verbose':[True]}
+            params = {'k': [20, 40], 'sim_options': {'name': ['pearson_baseline', 'cosine'],'shrinkage':[100,75,50],'min_support': [3],'user_based': [True]},'verbose':[True]}
         elif self.algorithm == "KNNM":
             algo = KNNWithMeans
-            params = {'sim_options': {'name': ['pearson', 'cosine'],'shrinkage':[100,75,50],'min_support': [7],'user_based': [True]},'verbose':[True]}
+            params = {'k': [20, 40], 'sim_options': {'name': ['pearson_baseline', 'cosine'],'shrinkage':[100,75,50],'min_support': [3],'user_based': [True]},'verbose':[True]}
         elif self.algorithm == "KNN":
             algo = KNNBasic
-            params = {'sim_options': {'name': ['pearson', 'cosine'],'shrinkage':[100,75,50],'min_support': [7],'user_based': [True]},'verbose':[True]}    
+            params = {'k': [20, 40], 'sim_options': {'name': ['pearson_baseline', 'cosine'],'shrinkage':[100,75,50],'min_support': [3],'user_based': [True]},'verbose':[True]}    
         elif self.algorithm == "METRICS":
             self.performance_metrics()
         else:
@@ -89,7 +89,8 @@ class Engine:
         u_sd = statistics.stdev(rates)
 
         params = []
-        algs = [SVD, SVDpp, BaselineOnly, BaselineOnly,KNNWithZScore, KNNWithMeans,KNNBasic]
+        #SVDpp, 
+        algs = [SVD, BaselineOnly, BaselineOnly,KNNWithZScore] #, KNNWithMeans,KNNBasic]
 
         params1 = { 'n_factors': [20, 40],
                     'n_epochs': [20, 30], 
@@ -99,13 +100,13 @@ class Engine:
         params.append(params1)
 
 
-        params2 = { 'n_factors': [20, 40],
-                    'n_epochs': [20, 30], 
-                    'lr_all': [0.005, 0.07],
-                    'reg_all': [0.02, 0.05],
-                    'verbose': [True],
-                    'cache_ratings': [True]}
-        params.append(params2)
+        # params2 = { 'n_factors': [20, 40],
+        #             'n_epochs': [20, 30], 
+        #             'lr_all': [0.005, 0.07],
+        #             'reg_all': [0.02, 0.05],
+        #             'verbose': [True],
+        #             'cache_ratings': [True]}
+        # params.append(params2)
 
         params3 = {'bsl_options': { 'method': ['als'],
                                     'n_epochs': [5, 10, 15],
@@ -123,13 +124,11 @@ class Engine:
         params.append(params4)
 
         paramsKnn = {'k': [20, 40, 50],
-                     'sim_options': [{'name': 'cosine', 'user_based': True, 'min_support': 3},
-                                     {'name': 'pearson_baseline', 'user_based': True, 'min_support': 3, 'shrinkage': 25},
-                                     {'name': 'pearson_baseline', 'user_based': True, 'min_support': 3, 'shrinkage': 50}],
+                     'sim_options': {'name': ['cosine', 'pearson_baseline'], 'user_based': [True], 'shrinkage':[25,50,100], 'min_support': [3]},
                     'verbose': [True]}
         params.append(paramsKnn)
-        params.append(paramsKnn)
-        params.append(paramsKnn)
+        # params.append(paramsKnn)
+        # params.append(paramsKnn)
         
         print("STEP About to start  multi-threaded gridsearch CV and test")
         cv_args = list(zip(algs,params))
@@ -141,8 +140,8 @@ class Engine:
         pool.join()
 
 
-        algs[2] = "ALS"
-        algs[3] = "SGD"
+        algs[1] = "ALS"
+        algs[2] = "SGD"
 
         algs = [str(x) for x in algs]
         print("STEP Packing results from CV and testing into Dataframe")
