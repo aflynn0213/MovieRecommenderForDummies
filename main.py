@@ -26,7 +26,7 @@ def index():
 def select_user(algorithm):
     if request.method == 'POST':
         user_id = request.form['user_id']
-        if 'rate_movie' in request.form:
+        if 'rate_self' in request.form:
             eng = Engine(algorithm)
             engines.append(eng)
             return redirect(url_for('rate_movie', algorithm=algorithm))
@@ -54,7 +54,7 @@ def process_2(algorithm):
         eng = engines[-1]
         recommendations = get_recommendations(eng.preds, 800)
         recommendations = ', '.join(recommendations)
-        return redirect(url_for('recommendations', algorithm=algorithm, recommendations=recommendations))
+        return redirect(url_for('recommendations', algorithm=algorithm, user_id=800, recommendations=recommendations))
 
     return render_template('process_2.html', algorithm=algorithm)
 
@@ -79,8 +79,9 @@ def rate_movie(algorithm):
         
         # If the user has rated 20 movies, show a "thank you" message
         if len(movie_list) == 20:
-            movie_df = pd.DataFrame(movie_list,columns=[userId,movieId,rating])
+            movie_df = pd.DataFrame(movie_list,columns=["userId","movieId","rating"])
             eng.run_new_user(movie_df)
+            engines.append(eng)
             return redirect(url_for('process_2', algorithm=algorithm))
     
     title = "NOT IN DATABASE"
@@ -89,7 +90,7 @@ def rate_movie(algorithm):
         tmdb = eng.dp.moviedId_tmdbId_map(rando)
         title = eng.dp.fetch_title(tmdb)        
     
-    return render_template('rate_movie.html', title=title, movie_id=rando, eng_id=eng_id)
+    return render_template('rate_movie.html', title=title, movie_id=rando)
 
 def get_recommendations(preds, user_id):
     dp = DataProcessor()

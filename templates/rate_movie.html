@@ -5,10 +5,10 @@
 </head>
 <body>
     <h1>Rate a Movie</h1>
-    <form method="POST" action="{{ url_for('rate_movie') }}">
+    <form method="POST">
         <label for="title">Movie Title:</label>
         <p>{{ title }}</p>
-        <br>
+        <input type="hidden" name="movie_id" id="movie_id">
         <br>
         <label for="rating">Rating:</label>
         <select name="rating" id="rating">
