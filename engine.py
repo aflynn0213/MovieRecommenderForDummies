@@ -9,12 +9,13 @@ from surprise.prediction_algorithms.knns import KNNWithMeans
 from surprise.prediction_algorithms.knns import KNNWithZScore
 from surprise import SVD, SVDpp, BaselineOnly
 from surprise.model_selection.search import GridSearchCV
+from surprise.accuracy
 import pandas as pd
 
 class Engine:
     
-    def __init__(self,opt):
-        self.algorithm = opt
+    def __init__(self,algorithm):
+        self.algorithm = algorithm
         print("STEP Reading in CSVs")
         self.dp = DataProcessor()
         print("STEP Pivotting User Ratings csv to create SIM MATRIX")
@@ -22,19 +23,47 @@ class Engine:
         self.data = Dataset.load_from_df(self.dp.ratings,self.reader)
         self.fullTrain = self.data.build_full_trainset()
         self.antiTest = self.fullTrain.build_anti_testset(fill=0)
-        self.best_est = SVD() if opt==1 else KNNWithZScore()
-        self.preds = self.data
+        if algorithm == "METRICS":
+            self.performance_metrics()
+        else:
+            self.best_est = self.hyperparameter_tuning()
+            self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)
+        
+    def hyperparameter_tuning(self):
+        print(self.algorithm)
+        if self.algorithm == "SVD":
+            algo = SVD
+            params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True]}
+        elif self.algorithm == "SVDpp":
+            algo = SVDpp
+            params = {'n_factors': [10,20,50],'verbose':[True], 'cache_ratings':[True]}
+        elif self.algorithm == "ALS":
+            algo = BaselineOnly
+            params = {'bsl_options':{'method': ['als'],'reg_i':[10,15],'reg_u':[15,20],'n_epochs':[10,20]}}
+        elif self.algorithm == "SGD":
+            algo = BaselineOnly
+            params = {'bsl_options':{'method': ['sgd'],'reg':[.02,.05],'learning_rate':[.005,.01,.02],'n_epochs':[15,20]}}
+        elif self.algorithm == "KNNZ":
+            algo = KNNWithZScore
+            params = {'sim_options': {'name': ['pearson', 'cosine'],'shrinkage':[100,75,50],'min_support': [7],'user_based': [True]},'verbose':[True]}
+        elif self.algorithm == "KNNM":
+            algo = KNNWithMeans
+            params = {'sim_options': {'name': ['pearson', 'cosine'],'shrinkage':[100,75,50],'min_support': [7],'user_based': [True]},'verbose':[True]}
+        elif self.algorithm == "KNN":
+            algo = KNNBasic
+            params = {'sim_options': {'name': ['pearson', 'cosine'],'shrinkage':[100,75,50],'min_support': [7],'user_based': [True]},'verbose':[True]}    
+        elif self.algorithm == "METRICS":
+            self.performance_metrics()
+        else:
+            print("NOT A VALID ALGORITHM")
+        
+        cv_obj = GridSearchCV(algo,params,measures=["rmse","mae"],cv=3,refit=True,n_jobs=-1,joblib_verbose=4)
+        cv_obj.fit(self.data)
+        
+        return cv_obj.best_estimator["rmse"]      
 
-    def run(self):
-        if (self.algorithm == 1):
-            self.run_mf()
-        elif (self.algorithm == 2):
-            self.run_kNN()
-            
-        return self.preds
-        #self.common()
-    
-    def run_mf(self): 
+        
+    def performance_metrics(self):
         cv_df = []
         
         params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True]}
@@ -91,12 +120,6 @@ class Engine:
         print("WITH PARAMETERS: ")
         print(self.best_est.best_params["rmse"])
         
-        self.best_est = self.best_est.best_estimator["rmse"]
-        
-        print("STEP Prediction unseen movies with best MF estimator")
-        self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)        
-
-    def run_kNN(self):
         params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [True]}}
         alg_objs = []
         
@@ -127,47 +150,13 @@ class Engine:
         print("WITH PARAMETERS OF: ")
         print(alg_objs[min_i].best_params["rmse"])
         self.best_est = KNNWithZScore(k=40,min_support=10,sim_options={"name":"pearson",})
-        print("STEP Predicting unseen movies with best KNN estimator")
-        self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)
         
-    def run_new_user(self):
+        
+        
+    def run_new_user(self,df):
+        self.dp.ratings = pd.concat([self.dp.ratings,df],axis=0)
         self.data = Dataset.load_from_df(self.dp.ratings,self.reader)
         self.fullTrain = self.data.build_full_trainset()
         self.antiTest = self.fullTrain.build_anti_testset(fill=0)
         self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)
         
-
-    # def common(self):
-    #     user_opt = 0
-    #     valid_opts = [1,2,3,4]
-
-        
-    
-    #     while(user_opt != 3):
-    #         print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
-    #         user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
-    #         if (user_opt not in valid_opts):
-    #             print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
-    #             continue 
-    #         elif (user_opt == 1):
-    #             userID_input = int(input("USER ID: "))
-    #             if (not self.fullTrain.knows_user(userID_input)):
-    #                 print("INVALID USER ID, EXITING......")
-    #             else:
-    #                 self.dp.topTenPresentation(self.preds, userID_input)    
-    #         elif (user_opt == 2):
-    #             print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
-    #             print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
-    #             print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
-    #             print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
-    #             print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
-    #             print("PRESENTING FILMS NOW......")
-    #             newRates,userId = self.dp.rand_movie_rater()
-    #             self.dp.ratings = self.dp.ratings.append(newRates,ignore_index=True,sort=False)
-    #             self.run_new_user()
-    #             self.dp.topTenPresentation(self.preds,len(self.dp.ratings-1))     
-    #         elif (user_opt == 3):
-    #             print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
-    #             print("HOPE TO SEE YOU SOON!\n")
-    #             return False
-
