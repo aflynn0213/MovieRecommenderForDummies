@@ -4,24 +4,7 @@
 	<title>Algorithm Metrics</title>
 </head>
 <body>
-	<h1>Scores and Parameters</h1>
-	<table>
-		<thead>
-			<tr>
-				{% for col in scores.keys() %}
-				<th>{{ col }}</th>
-				{% endfor %}
-			</tr>
-		</thead>
-		<tbody>
-			{% for row in scores.values() %}
-			<tr>
-				{% for col in scores.keys() %}
-				<td>{{ row[col] }}</td>
-				{% endfor %}
-			</tr>
-			{% endfor %}
-		</tbody>
-	</table>
+	<h1>Algorithm Metrics</h1>
+	{{ scores|safe }}
 </body>
 </html>

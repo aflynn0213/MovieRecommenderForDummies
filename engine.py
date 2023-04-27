@@ -83,22 +83,13 @@ class Engine:
         return [fcp_score,rmse_score,b_params]
         
     def performance_metrics(self):
-
-        self.dp = DataProcessor()
-        self.reader = Reader(rating_scale=(1,5)) 
-        self.data = Dataset.load_from_df(self.dp.ratings,self.reader)
-        self.fullTrain = self.data.build_full_trainset()
-        self.antiTest = self.fullTrain.build_anti_testset(fill=0)
-
+        print("STEP In performance metrics")
         u_mean = self.fullTrain.global_mean
         rates = [r[2] for r in self.fullTrain.all_ratings()]
         u_sd = statistics.stdev(rates)
 
-        fcp_scores = []
-        rmse_scores = []
-        best_params = []
         params = []
-        algs = [SVD, BaselineOnly, BaselineOnly]#,KNNWithZScore, KNNWithMeans,KNNBasic]
+        algs = [SVD, SVDpp, BaselineOnly, BaselineOnly,KNNWithZScore, KNNWithMeans,KNNBasic]
 
         params1 = { 'n_factors': [20, 40],
                     'n_epochs': [20, 30], 
@@ -108,15 +99,13 @@ class Engine:
         params.append(params1)
 
 
-        '''params2 = { 'n_factors': [20, 40],
+        params2 = { 'n_factors': [20, 40],
                     'n_epochs': [20, 30], 
                     'lr_all': [0.005, 0.07],
-                    'reg_all': [0.02, 0.05], 
-                    'init_mean': [u_mean],
-                    'init_std_dev': [u_sd],
+                    'reg_all': [0.02, 0.05],
                     'verbose': [True],
                     'cache_ratings': [True]}
-        params.append(params2)'''
+        params.append(params2)
 
         params3 = {'bsl_options': { 'method': ['als'],
                                     'n_epochs': [5, 10, 15],
@@ -130,21 +119,19 @@ class Engine:
                         'learning_rate': [.001, .025, .005],
                         'reg': [.02, .05, .1],
                         'n_epochs': [10, 20, 30]},
-                        'verbose': [False]}
+                        'verbose': [True]}
         params.append(params4)
 
-        '''paramsKnn = { 'k': [20, 40, 50],
-                    'sim_options': [{'name': 'cosine', 'user_based': True, 'min_support': 3},
-                                    {'name': 'cosine', 'user_based': False, 'min_support': 3},
-                                    {'name': 'pearson_baseline', 'user_based': True, 'min_support': 3, 'shrinkage': 25},
-                                    {'name': 'pearson_baseline', 'user_based': False, 'min_support': 3, 'shrinkage': 25},
-                                    {'name': 'pearson_baseline', 'user_based': True, 'min_support': 3, 'shrinkage': 50},
-                                    {'name': 'pearson_baseline', 'user_based': False, 'min_support': 3, 'shrinkage': 50}],
+        paramsKnn = {'k': [20, 40, 50],
+                     'sim_options': [{'name': 'cosine', 'user_based': True, 'min_support': 3},
+                                     {'name': 'pearson_baseline', 'user_based': True, 'min_support': 3, 'shrinkage': 25},
+                                     {'name': 'pearson_baseline', 'user_based': True, 'min_support': 3, 'shrinkage': 50}],
                     'verbose': [True]}
         params.append(paramsKnn)
         params.append(paramsKnn)
-        params.append(paramsKnn)'''
-
+        params.append(paramsKnn)
+        
+        print("STEP About to start  multi-threaded gridsearch CV and test")
         cv_args = list(zip(algs,params))
         pool = Pool()
         partial_cv = partial(self.test_bestCV_alg)
@@ -154,11 +141,11 @@ class Engine:
         pool.join()
 
 
-        algs[1] = "ALS"
-        algs[2] = "SGD"
+        algs[2] = "ALS"
+        algs[3] = "SGD"
 
         algs = [str(x) for x in algs]
-
+        print("STEP Packing results from CV and testing into Dataframe")
         df_data = { 'Algorithm': algs,
                     'FCP': [score[0] for score in scores],
                     'RMSE': [score[1] for score in scores],
