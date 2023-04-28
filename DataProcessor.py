@@ -27,7 +27,7 @@ class DataProcessor:
             if(self.links.at[movie,"tmdbId"]==0):
                 filtered_movies.append(movie)
                 print(movie)
-        self.rates.drop(self.rates[self.rates['movieId'] in filtered_movies].index,inplace==True)
+        self.rates = self.rates[self.rates.movieId.isin(filtered_movies)==False]
         self.rates.drop('timestamp',axis=1, inplace=True)
         self.ratings = self.rates
         self.rates = self.rates.pivot(index='userId',columns='movieId',values='rating')
