@@ -21,6 +21,12 @@ class DataProcessor:
         self.uniq_movs = self.rates.movieId.unique()
         self.uniq_usrs = self.rates.userId.unique()
         self.newUserId = self.uniq_usrs.max()-1
+        filtered_movies = []
+        self.links['tmdbId']=self.links['tmdbId'].fillna(0)
+        for movie in self.uniq_movs:
+            if(self.links.at[movie,"tmdbId"]==0):
+                filtered_movies.append(movie)
+        self.rates.drop(self.rates[self.rates['movieId'] in filtered_movies].index,inplace==True)
         self.rates.drop('timestamp',axis=1, inplace=True)
         self.ratings = self.rates
         self.rates = self.rates.pivot(index='userId',columns='movieId',values='rating')
