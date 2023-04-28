@@ -9,7 +9,6 @@ import os
 class DataProcessor:
 
     def __init__(self):
-        path = os.getcwd()
         rates = './include/ratings_small.csv'
         links = './include/links_small.csv'
         moves = './include/movies_metadata.csv'
