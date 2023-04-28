@@ -26,6 +26,7 @@ class DataProcessor:
         for movie in self.uniq_movs:
             if(self.links.at[movie,"tmdbId"]==0):
                 filtered_movies.append(movie)
+                print(movie)
         self.rates.drop(self.rates[self.rates['movieId'] in filtered_movies].index,inplace==True)
         self.rates.drop('timestamp',axis=1, inplace=True)
         self.ratings = self.rates
