@@ -4,13 +4,16 @@ from multiprocessing import Pool
 import time
 import numpy as np
 from collections import defaultdict
+import os
 
 class DataProcessor:
 
     def __init__(self):
-        rates = 'ratings_small.csv'
-        links = 'links_small.csv'
-        files = ['movies_metadata.csv',rates,links]
+        path = os.getcwd()
+        rates = '../include/ratings_small.csv'
+        links = '../include/links_small.csv'
+        moves = '../include/movies_metadata.csv'
+        files = [moves,rates,links]
 
         #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
         with Pool(processes=3) as p:
@@ -42,7 +45,7 @@ class DataProcessor:
         return (self.movies.at[_id,"title"] if valid else "NOT IN DATABASE")
      
     def read_data(self,x):
-        if x == 'movies_metadata.csv':
+        if 'movies_metadata.csv' in x.lower():
             return (pd.read_csv(x,usecols=["id","original_language","title"],dtype={"id":"string","title":"string"})) #[lambda m: m["original_language"]=="en"])
         else:
             return pd.read_csv(x)
