@@ -10,164 +10,156 @@ from surprise.prediction_algorithms.knns import KNNWithZScore
 from surprise import SVD, SVDpp, BaselineOnly
 from surprise.model_selection.search import GridSearchCV
 import pandas as pd
+import statistics 
+from surprise import accuracy
+from multiprocessing import Pool
+from functools import partial
 
 class Engine:
     
-    def __init__(self,opt):
-        self.algorithm = opt
-        print("STEP Reading in CSVs")
+    def __init__(self,algorithm):
+        self.algorithm = algorithm
+        print("STEP Reading in Data from CSVs")
         self.dp = DataProcessor()
-        print("STEP Pivotting User Ratings csv to create SIM MATRIX")
+        print("STEP Creating Training, Test, and AntiTest sets")
         self.reader = Reader(rating_scale=(1,5)) 
         self.data = Dataset.load_from_df(self.dp.ratings,self.reader)
         self.fullTrain = self.data.build_full_trainset()
+        self.test_set = self.fullTrain.build_testset()
         self.antiTest = self.fullTrain.build_anti_testset(fill=0)
-        self.best_est = SVD() if opt==1 else KNNWithZScore()
-        self.preds = self.data
-
-    def run(self):
-        if (self.algorithm == 1):
-            self.run_mf()
-        elif (self.algorithm == 2):
-            self.run_kNN()
-            
-        return self.preds
-        #self.common()
+        if algorithm == "METRICS":
+            self.performance_df = self.performance_metrics()
+        else:
+            self.best_est = self.hyperparameter_tuning()
+            self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)
+        
+    def hyperparameter_tuning(self):
+        print("STEP Picking Algorithm: ")
+        print(self.algorithm)
+        if self.algorithm == "SVD":
+            algo = SVD
+            params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True]}
+        elif self.algorithm == "SVDpp":
+            algo = SVDpp
+            params = {'n_factors': [10,20,50],'verbose':[True], 'cache_ratings':[True]}
+        elif self.algorithm == "ALS":
+            algo = BaselineOnly
+            params = {'bsl_options':{'method': ['als'],'reg_i':[10,15],'reg_u':[15,20],'n_epochs':[10,20]}}
+        elif self.algorithm == "SGD":
+            algo = BaselineOnly
+            params = {'bsl_options':{'method': ['sgd'],'reg':[.02,.05],'learning_rate':[.005,.01,.02],'n_epochs':[15,20]}}
+        elif self.algorithm == "KNNZ":
+            algo = KNNWithZScore
+            params = {'k': [20, 40], 'sim_options': {'name': ['pearson_baseline', 'cosine'],'shrinkage':[100,75,50],'min_support': [3],'user_based': [True]},'verbose':[True]}
+        elif self.algorithm == "KNNM":
+            algo = KNNWithMeans
+            params = {'k': [20, 40], 'sim_options': {'name': ['pearson_baseline', 'cosine'],'shrinkage':[100,75,50],'min_support': [3],'user_based': [True]},'verbose':[True]}
+        elif self.algorithm == "KNN":
+            algo = KNNBasic
+            params = {'k': [20, 40], 'sim_options': {'name': ['pearson_baseline', 'cosine'],'shrinkage':[100,75,50],'min_support': [3],'user_based': [True]},'verbose':[True]}    
+        elif self.algorithm == "METRICS":
+            self.performance_metrics()
+        else:
+            print("NOT A VALID ALGORITHM")
+        
+        cv_obj = GridSearchCV(algo,params,measures=["rmse","mae"],cv=3,refit=True,n_jobs=-1,joblib_verbose=4)
+        cv_obj.fit(self.data)
+        
+        return cv_obj.best_estimator["rmse"]     
     
-    def run_mf(self): 
-        cv_df = []
-        
-        params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True]}
-        params_pp = {'n_factors': [10,20,50],'verbose':[True], 'cache_ratings':[True]}
-         
-        print("STEP Performing SVD GridSearchCV")
-        algCV = GridSearchCV(SVD, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)   
-        algCV.fit(self.data)
-        cv_df.append(pd.DataFrame.from_dict(algCV.cv_results))
-        print("RMSE scores for" + "SVD " + ": ")
-        print(algCV.best_score["rmse"])
-        print("With Parameters: ",algCV.best_params["rmse"])
-        min_score = algCV.best_score["rmse"]
-        self.best_est = algCV
+    def test_bestCV_alg(self,algo,params):
+        gs_cv = GridSearchCV(algo,params,measures=['rmse'],cv=3,n_jobs=-1,joblib_verbose=2)
+        gs_cv.fit(self.data)
 
-        
-        print("STEP Performing SVDpp GridSearchCV")
-        algCV = GridSearchCV(SVDpp, param_grid=params_pp,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1)   
-        algCV.fit(self.data)
-        cv_df.append(pd.DataFrame.from_dict(algCV.cv_results))
-        print("RMSE scores for" + "SVDpp " + ": ")
-        print(algCV.best_score["rmse"])
-        print("With Parameters: ",algCV.best_params["rmse"])
-        tmp_score = algCV.best_score["rmse"]
-        if (tmp_score<min_score):
-            min_score = tmp_score
-            self.best_est = algCV
-        
-        print("SVD GRIDSEARCH")
-        cv_df[0].to_csv('svd_gridsearch.csv')
-        
-        print("SVDpp GRIDSEARCH")
-        cv_df[1].to_csv('svdpp_gridsearch.csv')
+        b_params = gs_cv.best_params["rmse"] 
+        print(gs_cv.best_score["rmse"])
+        print(b_params)
+        best_est = gs_cv.best_estimator['rmse'].fit(self.fullTrain)
+        preds = best_est.test(self.test_set)
 
-        print("STEP Performing ALS and SGD Comparison")
-        params = {'bsl_options':{'method': ['als','sgd']}}
-        baselineCV = GridSearchCV(BaselineOnly, param_grid=params,measures=["rmse","mae"],cv=10,refit=True,n_jobs=-1)
-        baselineCV.fit(self.data)
-        cv_dfBase = pd.DataFrame.from_dict(baselineCV.cv_results)
+        fcp_score = accuracy.fcp(preds,verbose=True)
+        rmse_score = accuracy.rmse(preds,verbose=True)
 
-        print("RMSE scores for" + "BaselineOnly" + ": ")
-        print(baselineCV.best_score["rmse"])
-        print("With Parameters: ",baselineCV.best_params["rmse"])
-        cv_dfBase.to_csv('baseline_gridsearch.csv')
+        return [fcp_score,rmse_score,b_params]
         
-        baseline_score = baselineCV.best_score["rmse"]
-        svd_score = min_score
+    def performance_metrics(self):
+        print("STEP In performance metrics")
+        u_mean = self.fullTrain.global_mean
+        rates = [r[2] for r in self.fullTrain.all_ratings()]
+        u_sd = statistics.stdev(rates)
 
-        if (baseline_score <= svd_score):
-            self.best_est = baselineCV
+        params = []
+        #SVDpp, 
+        algs = [SVD, BaselineOnly, BaselineOnly,KNNWithZScore] #, KNNWithMeans,KNNBasic]
 
-        print("BEST MATRIX FACTORIZATION ESTIMATOR IS: ")
-        print(self.best_est.best_estimator["rmse"])
-        print("WITH PARAMETERS: ")
-        print(self.best_est.best_params["rmse"])
-        
-        self.best_est = self.best_est.best_estimator["rmse"]
-        
-        print("STEP Prediction unseen movies with best MF estimator")
-        self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)        
+        params1 = { 'n_factors': [20, 40],
+                    'n_epochs': [20, 30], 
+                    'lr_all': [0.005, 0.07],
+                    'reg_all': [0.02, 0.05], 
+                    'verbose': [True]}
+        params.append(params1)
 
-    def run_kNN(self):
-        params = {'k': [20, 40],'sim_options': {'name': ['pearson', 'cosine'],'min_support': [10,20],'user_based': [True]}}
-        alg_objs = []
-        
-        for alg in [KNNWithZScore, KNNWithMeans, KNNBasic]:
-            alg_objs.append(GridSearchCV(KNNWithZScore, param_grid=params,measures=["rmse","mae"],cv=4,refit=True,n_jobs=-1))
-        
-        print("STEP Performing Grid Search on KNNs")
-        alg_objs[0].fit(self.data)
-        alg_objs[1].fit(self.data)
-        alg_objs[2].fit(self.data)
-        
-        print(alg_objs[0].best_score["rmse"])
-        print(alg_objs[1].best_score["rmse"])
-        print(alg_objs[2].best_score["rmse"])
 
-        min_score = 100000
-        min_i = 0
-        for i in range(len(alg_objs)):
-            tmp_score = alg_objs[i].best_score["rmse"]
-            if (tmp_score<min_score):
-                min_score = tmp_score
-                min_i = i
+        # params2 = { 'n_factors': [20, 40],
+        #             'n_epochs': [20, 30], 
+        #             'lr_all': [0.005, 0.07],
+        #             'reg_all': [0.02, 0.05],
+        #             'verbose': [True],
+        #             'cache_ratings': [True]}
+        # params.append(params2)
 
-        #tr, te = train_test_split(ratings, test_size=0.25)
-        self.best_est = alg_objs[min_i].best_estimator["rmse"]
-        print("BEST ESTIMATOR IS: ")
-        print(self.best_est)
-        print("WITH PARAMETERS OF: ")
-        print(alg_objs[min_i].best_params["rmse"])
-        self.best_est = KNNWithZScore(k=40,min_support=10,sim_options={"name":"pearson",})
-        print("STEP Predicting unseen movies with best KNN estimator")
-        self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)
+        params3 = {'bsl_options': { 'method': ['als'],
+                                    'n_epochs': [5, 10, 15],
+                                    'reg_u': [10, 15, 20],
+                                    'reg_i': [5, 10, 15]},
+                                    'verbose': [True]}
+        params.append(params3)
+
+        params4 = { 'bsl_options': 
+                    {   'method': ['sgd'],
+                        'learning_rate': [.001, .025, .005],
+                        'reg': [.02, .05, .1],
+                        'n_epochs': [10, 20, 30]},
+                        'verbose': [True]}
+        params.append(params4)
+
+        paramsKnn = {'k': [20, 40, 50],
+                     'sim_options': {'name': ['cosine', 'pearson_baseline'], 'user_based': [True], 'shrinkage':[25,50,100], 'min_support': [3]},
+                    'verbose': [True]}
+        params.append(paramsKnn)
+        # params.append(paramsKnn)
+        # params.append(paramsKnn)
         
-    def run_new_user(self):
+        print("STEP About to start  multi-threaded gridsearch CV and test")
+        cv_args = list(zip(algs,params))
+        pool = Pool()
+        partial_cv = partial(self.test_bestCV_alg)
+        scores = pool.starmap(partial_cv,cv_args)
+
+        pool.close()
+        pool.join()
+
+
+        algs[1] = "ALS"
+        algs[2] = "SGD"
+
+        algs = [str(x) for x in algs]
+        print("STEP Packing results from CV and testing into Dataframe")
+        df_data = { 'Algorithm': algs,
+                    'FCP': [score[0] for score in scores],
+                    'RMSE': [score[1] for score in scores],
+                    'Best Parameter Set': [score[2] for score in scores]}
+
+        df = pd.DataFrame(df_data)
+        df.set_index('Algorithm',inplace=True)
+
+        return df
+        
+        
+    def run_new_user(self,df):
+        self.dp.ratings = pd.concat([self.dp.ratings,df],axis=0)
         self.data = Dataset.load_from_df(self.dp.ratings,self.reader)
         self.fullTrain = self.data.build_full_trainset()
         self.antiTest = self.fullTrain.build_anti_testset(fill=0)
         self.preds = self.best_est.fit(self.fullTrain).test(self.antiTest)
         
-
-    # def common(self):
-    #     user_opt = 0
-    #     valid_opts = [1,2,3,4]
-
-        
-    
-    #     while(user_opt != 3):
-    #         print("\nWOULD YOU LIKE TO SEE A MOVIE RECOMMENDED FOR A CERTAIN USER OR YOURSELF?")
-    #         user_opt = int(input("1)USER ID\n2)YOURSELF\n3)QUIT\n"))
-    #         if (user_opt not in valid_opts):
-    #             print("TRY AGAIN, VALID OPTIONS ARE 1-4\n")
-    #             continue 
-    #         elif (user_opt == 1):
-    #             userID_input = int(input("USER ID: "))
-    #             if (not self.fullTrain.knows_user(userID_input)):
-    #                 print("INVALID USER ID, EXITING......")
-    #             else:
-    #                 self.dp.topTenPresentation(self.preds, userID_input)    
-    #         elif (user_opt == 2):
-    #             print("WE ARE GOING TO GENERATE A RANDOM LIST OF MOVIES\n")
-    #             print("YOU HAVE THE OPTION OF RANKING THE MOVIE FROM 1-5 STARS\n")
-    #             print("YOU CAN DO THIS INCREMENTS OF .5 STARS\n")
-    #             print("IF YOU HAVEN'T SEE THE FILM THERE WILL BE A SKIP OPTION\n")
-    #             print("PLEASE SKIP IF YOU HAVEN'T SEEN THE FILM!\n")
-    #             print("PRESENTING FILMS NOW......")
-    #             newRates,userId = self.dp.rand_movie_rater()
-    #             self.dp.ratings = self.dp.ratings.append(newRates,ignore_index=True,sort=False)
-    #             self.run_new_user()
-    #             self.dp.topTenPresentation(self.preds,len(self.dp.ratings-1))     
-    #         elif (user_opt == 3):
-    #             print("THANK YOU FOR USING THE MOVIE RECOMMENDER\n")
-    #             print("HOPE TO SEE YOU SOON!\n")
-    #             return False
-

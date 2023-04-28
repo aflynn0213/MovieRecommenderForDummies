@@ -1,3 +1,5 @@
+''' 
+#NOT USED################################
 # -*- coding: utf-8 -*-
 """
 Created on Fri Mar 24 23:34:45 2023
@@ -51,7 +53,7 @@ def highest_cos(A,cos,_id):
     df = df.loc[:,_id]
     return df
 
-'''class Collaborator:
+class Collaborator:
     
     def __init__(self,df,opt):
         self.df = df
@@ -69,4 +71,4 @@ def highest_cos(A,cos,_id):
             return self.df.sub(self.df.mean(axis=0,skipna=True),axis=1)
        
 '''
-   
+'''NOT USED###############################'''
