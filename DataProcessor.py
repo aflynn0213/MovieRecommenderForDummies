@@ -28,7 +28,6 @@ class DataProcessor:
                 filtered_movies.append(movie)
                 print(movie)
         self.rates = self.rates[self.rates.movieId.isin(filtered_movies)==False]
-        self.rates.to_csv('filtered_rates.csv')
         self.rates.drop('timestamp',axis=1, inplace=True)
         self.ratings = self.rates
         self.rates = self.rates.pivot(index='userId',columns='movieId',values='rating')
