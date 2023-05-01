@@ -9,9 +9,10 @@ import os
 class DataProcessor:
 
     def __init__(self):
-        rates = './include/ratings_small.csv'
-        links = './include/links_small.csv'
-        moves = './include/movies_metadata.csv'
+        cwd=os.getcwd()
+        rates = cwd+'/include/ratings_small.csv'
+        links = cwd+'/include/links_small.csv'
+        moves = cwd+'/include/movies_metadata.csv'
         files = [moves,rates,links]
 
         #MULTI-THREADED (WORKS OUTSIDE OF SPYDER)
