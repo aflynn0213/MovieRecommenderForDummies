@@ -86,7 +86,7 @@ def rate_movie(algorithm):
     
     title = "NOT IN DATABASE"
     while (title=="NOT IN DATABASE"):
-        rando = random.randint(0, len(eng.dp.uniq_movs) - 1)
+        rando = random.choice(eng.dp.uniq_movs)
         tmdb = eng.dp.moviedId_tmdbId_map(rando)
         title = eng.dp.fetch_title(tmdb)        
     
