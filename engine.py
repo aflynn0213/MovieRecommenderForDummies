@@ -41,7 +41,7 @@ class Engine:
             params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True]}
         elif self.algorithm == "SVDpp":
             algo = SVDpp
-            params = {'n_factors': [10,20,50],'verbose':[True], 'cache_ratings':[True]}
+            params = {'n_factors': [10,20,50], 'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True], 'cache_ratings':[True]}
         elif self.algorithm == "ALS":
             algo = BaselineOnly
             params = {'bsl_options':{'method': ['als'],'reg_i':[10,15],'reg_u':[15,20],'n_epochs':[10,20]}}
