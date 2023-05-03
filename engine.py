@@ -114,14 +114,9 @@ class Engine:
         algs = [SVD, BaselineOnly, BaselineOnly,KNNWithZScore] #, KNNWithMeans,KNNBasic]
 
         params1 = { 'n_factors': [20, 40],
-                    'lr_bu': [0.002, 0.005],
-                    'lr_bi': [0.002, 0.005],
-                    'lr_pu': [0.002, 0.005],
-                    'lr_qi': [0.002, 0.005],
-                    'reg_bu': [0.02, 0.01],
-                    'reg_bi': [0.02, 0.01],
-                    'reg_pu': [0.02, 0.01],
-                    'reg_qi': [0.02, 0.01], 
+                    'n_epochs': [20, 30], 
+                    'lr_all': [0.005, 0.07],
+                    'reg_all': [0.02, 0.05], 
                     'verbose': [True]}
         params.append(params1)
 
