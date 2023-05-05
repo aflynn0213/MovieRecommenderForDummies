@@ -109,11 +109,11 @@ if __name__ == '__main__':
         for i in true_1[15]:
             if mid == i[0]:
                 actual = i[1]
-                print("act")
-                print(actual)
+                #print("act")
+                #print(actual)
                 break
-        print("PRED")
-        print(pred)
+        #print("PRED")
+        #print(pred)
         total += (float(pred)-float(actual))**2 
         count += 1
     total = float(total)/count
@@ -129,11 +129,11 @@ if __name__ == '__main__':
                 if tv[0]==est[0]:
                     actual = tv[1]
                     break
-            print("ACT")
-            print(actual)
+            #print("ACT")
+            #print(actual)
             pred = est[1]
-            print("PRED")
-            print(pred)
+            #print("PRED")
+            #print(pred)
             total += (float(pred)-float(actual))**2 
             count += 1
     total = float(total)/count
@@ -147,11 +147,11 @@ if __name__ == '__main__':
                 if tv[0]==est[0]:
                     actual = tv[1]
                     break
-            print("ACT")
-            print(actual)
+            #print("ACT")
+            #print(actual)
             pred = est[1]
-            print("PRED")
-            print(pred)
+            #print("PRED")
+            #print(pred)
             total += (float(pred)-float(actual))**2 
             count += 1
     total = float(total)/count
