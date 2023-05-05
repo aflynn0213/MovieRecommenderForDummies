@@ -34,13 +34,15 @@ if __name__ == '__main__':
     train = pd.read_csv('benchmark_train.csv')
     train_2 = pd.read_csv('benchmark_train_2.csv') 
     train_3 = pd.read_csv('benchmark_train_3.csv') 
+    train_4 = pd.read_csv('benchmark_train_4.csv')
     
     #testing = pd.read_csv('benchmark_test.csv')
     data1 = Dataset.load_from_df(train,reader)
     data2 = Dataset.load_from_df(train_2,reader)
     data3 = Dataset.load_from_df(train_3, reader)
+    data4 = Dataset.load_from_df(train_4, reader)
     
-    data = [data1,data2,data3]
+    data = [data1,data2,data3,data4]
     print("ABOUT TO POOL")
     pool = Pool()
     partial_cv = partial(run_benchmark)
@@ -54,12 +56,15 @@ if __name__ == '__main__':
     true_1 = defaultdict(list)
     true_2 = defaultdict(list)
     true_3 = defaultdict(list)
+    true_4 = defaultdict(list)
     
     estimated_1 = defaultdict(list)
     estimated_2_unrated = defaultdict(list)
     estimated_2_rated = defaultdict(list)
     estimated_3_unrated = defaultdict(list)
     estimated_3_rated = defaultdict(list)
+    estimated_4_unrated = defaultdict(list)
+    estimated_4_rated = defaultdict(list)
     
     #preds[0][1] should be empty
     #preds[x][0] is set of already rated
@@ -68,16 +73,20 @@ if __name__ == '__main__':
     #preds is a list of tuples, we only want the specified user and the estimated(predicted) rating (est)
    #############ALREADY RATED###############
     for uid,iid,true_r,est, _ in preds[0][0]:
-            estimated_1[uid].append((iid,est))
-            true_1[uid].append((iid,true_r))
+        estimated_1[uid].append((iid,est))
+        true_1[uid].append((iid,true_r))
     
     for uid, iid, true_r, est, _ in preds[1][0]:
-            estimated_2_rated[uid].append((iid,est))
-            true_2[uid].append((iid,true_r))
+        estimated_2_rated[uid].append((iid,est))
+        true_2[uid].append((iid,true_r))
         
     for uid, iid, true_r, est, _ in preds[2][0]:
-            estimated_3_rated[uid].append((iid,est))
-            true_3[uid].append((iid,true_r))
+        estimated_3_rated[uid].append((iid,est))
+        true_3[uid].append((iid,true_r))
+    
+    for uid, iid, true_r, est, _ in preds[3][0]:
+        estimated_4_rated[uid].append((iid,est))
+        true_4[uid].append((iid,true_r))        
     ###########ALREADY RATED################## 
     
     ##############UNRATED ESTIMATES#################
@@ -86,6 +95,9 @@ if __name__ == '__main__':
     
     for uid, iid, true_r, est, _ in preds[2][1]:
         estimated_3_unrated[uid].append((iid,est))
+    
+    for uid, iid, true_r, est, _ in preds[3][1]:
+        estimated_4_unrated[uid].append((iid,est))
     ############UNRATED ESTIMATES###################
     
     
@@ -129,4 +141,21 @@ if __name__ == '__main__':
     print("THREE USERS SPARSE VECTORS:")
     print(rmse) 
     
+    for uid,_ in estimated_4_unrated.items():
+        for est in estimated_4_unrated[uid]:
+            for tv in true_1[uid]:
+                if tv[0]==est[0]:
+                    actual = tv[1]
+                    break
+            print("ACT")
+            print(actual)
+            pred = est[1]
+            print("PRED")
+            print(pred)
+            total += (float(pred)-float(actual))**2 
+            count += 1
+    total = float(total)/count
+    rmse = math.sqrt(total)
+    print("SPARSEST MATRIX:")
+    print(rmse) 
     
