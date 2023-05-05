@@ -1,10 +1,9 @@
 from surprise import Reader, Dataset
 #from surprise.model_selection import cross_validate
 #from surprise.model_selection import train_test_split
-#from surprise.prediction_algorithms.knns import KNNBasic
-#from surprise.prediction_algorithms.knns import KNNWithMeans
+
 from surprise.prediction_algorithms.knns import KNNWithZScore
-from surprise import SVD#, SVDpp, BaselineOnly
+from surprise import SVD
 from surprise.model_selection.search import GridSearchCV
 import pandas as pd
 from multiprocessing import Pool
@@ -13,11 +12,11 @@ from collections import defaultdict
 import math
 
 def run_benchmark(data):
-    algo = KNNWithZScore 
-    #algo = SVD
+    #algo = KNNWithZScore 
+    algo = SVD
     print("RUNNING GRIDSEARCH")
-    params = {'k': [3,7],'sim_options': {'name': ['cosine', 'pearson_baseline'], 'user_based': [True], 'shrinkage':[25,50,100]},'verbose': [True]}
-    #params = { 'n_factors': [5, 10],'n_epochs': [10, 20], 'lr_all': [0.005, 0.07],'reg_all': [0.02, 0.05], 'verbose': [True]} 
+    #params = {'k': [3,7],'sim_options': {'name': ['cosine', 'pearson_baseline'], 'user_based': [True], 'shrinkage':[25,50,100]},'verbose': [True]}
+    params = { 'n_factors': [5, 10],'n_epochs': [10, 20], 'lr_all': [0.005, 0.07],'reg_all': [0.02, 0.05], 'verbose': [True]} 
     cv_obj = GridSearchCV(algo,params,measures=["mse","fcp"],cv=3,refit=True,n_jobs=-1,joblib_verbose=4)
     cv_obj.fit(data)
     best_est = cv_obj.best_estimator["mse"]
