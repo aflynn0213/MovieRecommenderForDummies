@@ -3,7 +3,7 @@ from surprise import Reader, Dataset
 #from surprise.model_selection import train_test_split
 #from surprise.prediction_algorithms.knns import KNNBasic
 #from surprise.prediction_algorithms.knns import KNNWithMeans
-#from surprise.prediction_algorithms.knns import KNNWithZScore
+from surprise.prediction_algorithms.knns import KNNWithZScore
 from surprise import SVD#, SVDpp, BaselineOnly
 from surprise.model_selection.search import GridSearchCV
 import pandas as pd
@@ -13,9 +13,11 @@ from collections import defaultdict
 import math
 
 def run_benchmark(data):
-    algo = SVD
+    algo = KNNWithZScore 
+    #algo = SVD
     print("RUNNING GRIDSEARCH")
-    params = {'n_factors': [10,20,50],'lr_all':[0.0025,0.005],'reg_all': [0.02,0.01],'verbose':[True]}
+    params = {'k': [3,7],'sim_options': {'name': ['cosine', 'pearson_baseline'], 'user_based': [True], 'shrinkage':[25,50,100]},'verbose': [True]}
+    #params = { 'n_factors': [5, 10],'n_epochs': [10, 20], 'lr_all': [0.005, 0.07],'reg_all': [0.02, 0.05], 'verbose': [True]} 
     cv_obj = GridSearchCV(algo,params,measures=["mse","fcp"],cv=3,refit=True,n_jobs=-1,joblib_verbose=4)
     cv_obj.fit(data)
     best_est = cv_obj.best_estimator["mse"]
@@ -66,37 +68,40 @@ if __name__ == '__main__':
     #preds is a list of tuples, we only want the specified user and the estimated(predicted) rating (est)
    #############ALREADY RATED###############
     for uid,iid,true_r,est, _ in preds[0][0]:
-        if uid == 15:
-            estimated_1[iid].append(est)
-            true_1[iid].append(true_r)
+            estimated_1[uid].append((iid,est))
+            true_1[uid].append((iid,true_r))
     
     for uid, iid, true_r, est, _ in preds[1][0]:
-        if uid == 15:
-            estimated_2_rated[iid].append(est)
-            true_2[iid].append(true_r)
-    
+            estimated_2_rated[uid].append((iid,est))
+            true_2[uid].append((iid,true_r))
         
     for uid, iid, true_r, est, _ in preds[2][0]:
-        if uid == 15 or uid==73 or uid==452:
             estimated_3_rated[uid].append((iid,est))
-            true_3[uid].append((iid,est))
+            true_3[uid].append((iid,true_r))
     ###########ALREADY RATED################## 
     
     ##############UNRATED ESTIMATES#################
     for uid, iid, true_r, est, _ in preds[1][1]:
-        if uid == 15:
-            estimated_2_unrated[iid].append(est)
+        estimated_2_unrated[iid].append(est)
     
     for uid, iid, true_r, est, _ in preds[2][1]:
-        if uid == 15 or uid==73 or uid==452:
-            estimated_3_unrated[uid].append((iid,est))
-            
+        estimated_3_unrated[uid].append((iid,est))
+    ############UNRATED ESTIMATES###################
+    
     
     total = 0
     count = 0
     for mid,rates in estimated_2_unrated.items():
+        print(mid)
         pred = estimated_2_unrated[mid][0]
-        actual = true_1[mid][0] 
+        for i in true_1[15]:
+            if mid == i[0]:
+                actual = i[1]
+                print("act")
+                print(actual)
+                break
+        print("PRED")
+        print(pred)
         total += (float(pred)-float(actual))**2 
         count += 1
     total = float(total)/count
@@ -107,19 +112,21 @@ if __name__ == '__main__':
     total = 0
     count = 0
     for uid,_ in estimated_3_unrated.items():
-        for it in estimated_3_unrated[uid]:
-            print(it)
-            print(it[0])
-            for j in true_3[uid]:
-                print(j)
-                if j[0]==it[0]:
-                    actual = j[1]
+        for est in estimated_3_unrated[uid]:
+            for tv in true_1[uid]:
+                if tv[0]==est[0]:
+                    actual = tv[1]
                     break
+            print("ACT")
             print(actual)
-            pred = it[1]
+            pred = est[1]
+            print("PRED")
+            print(pred)
             total += (float(pred)-float(actual))**2 
             count += 1
     total = float(total)/count
     rmse = math.sqrt(total)
     print("THREE USERS SPARSE VECTORS:")
     print(rmse) 
+    
+    
