@@ -34,14 +34,18 @@ if __name__ == '__main__':
     train_2 = pd.read_csv('benchmark_train_2.csv') 
     train_3 = pd.read_csv('benchmark_train_3.csv') 
     train_4 = pd.read_csv('benchmark_train_4.csv')
+    train_5 = pd.read_csv('benchmark_train_5.csv')
+    train_6 = pd.read_csv('benchmark_train_6.csv')
     
     #testing = pd.read_csv('benchmark_test.csv')
     data1 = Dataset.load_from_df(train,reader)
     data2 = Dataset.load_from_df(train_2,reader)
     data3 = Dataset.load_from_df(train_3, reader)
     data4 = Dataset.load_from_df(train_4, reader)
+    data5 = Dataset.load_from_df(train_5, reader)
+    data6 = Dataset.load_from_df(train_6, reader)
     
-    data = [data1,data2,data3,data4]
+    data = [data1,data2,data3,data4,data5,data6]
     print("ABOUT TO POOL")
     pool = Pool()
     partial_cv = partial(run_benchmark)
@@ -64,6 +68,8 @@ if __name__ == '__main__':
     estimated_3_rated = defaultdict(list)
     estimated_4_unrated = defaultdict(list)
     estimated_4_rated = defaultdict(list)
+    estimated_5_unrated = defaultdict(list)
+    estimated_6_unrated = defaultdict(list)
     
     #preds[0][1] should be empty
     #preds[x][0] is set of already rated
@@ -97,6 +103,12 @@ if __name__ == '__main__':
     
     for uid, iid, true_r, est, _ in preds[3][1]:
         estimated_4_unrated[uid].append((iid,est))
+        
+    for uid, iid, true_r, est, _ in preds[4][1]:
+        estimated_5_unrated[uid].append((iid,est))
+        
+    for uid, iid, true_r, est, _ in preds[5][1]:
+        estimated_6_unrated[uid].append((iid,est))
     ############UNRATED ESTIMATES###################
     
     
@@ -155,6 +167,43 @@ if __name__ == '__main__':
             count += 1
     total = float(total)/count
     rmse = math.sqrt(total)
+    print("SPARSE MATRIX:")
+    print(rmse) 
+    
+    for uid,_ in estimated_5_unrated.items():
+        for est in estimated_5_unrated[uid]:
+            for tv in true_1[uid]:
+                if tv[0]==est[0]:
+                    actual = tv[1]
+                    break
+            #print("ACT")
+            #print(actual)
+            pred = est[1]
+            #print("PRED")
+            #print(pred)
+            total += (float(pred)-float(actual))**2 
+            count += 1
+    total = float(total)/count
+    rmse = math.sqrt(total)
+    print("SPARSER MATRIX:")
+    print(rmse) 
+    
+    for uid,_ in estimated_6_unrated.items():
+        for est in estimated_6_unrated[uid]:
+            for tv in true_1[uid]:
+                if tv[0]==est[0]:
+                    actual = tv[1]
+                    break
+            #print("ACT")
+            #print(actual)
+            pred = est[1]
+            #print("PRED")
+            #print(pred)
+            total += (float(pred)-float(actual))**2 
+            count += 1
+    total = float(total)/count
+    rmse = math.sqrt(total)
     print("SPARSEST MATRIX:")
     print(rmse) 
+    
     
