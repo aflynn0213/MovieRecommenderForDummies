@@ -154,6 +154,8 @@ if __name__ == '__main__':
     print("THREE USERS SPARSE VECTORS:")
     print(rmse3) 
     
+    total = 0
+    count = 0
     for uid,_ in estimated_4_unrated.items():
         for est in estimated_4_unrated[uid]:
             for tv in true_1[uid]:
@@ -172,6 +174,8 @@ if __name__ == '__main__':
     print("SPARSE MATRIX:")
     print(rmse4) 
     
+    total = 0
+    count = 0
     for uid,_ in estimated_5_unrated.items():
         for est in estimated_5_unrated[uid]:
             for tv in true_1[uid]:
@@ -190,6 +194,8 @@ if __name__ == '__main__':
     print("SPARSER MATRIX:")
     print(rmse5) 
     
+    total = 0
+    count = 0
     for uid,_ in estimated_6_unrated.items():
         for est in estimated_6_unrated[uid]:
             for tv in true_1[uid]:
