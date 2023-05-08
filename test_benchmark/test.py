@@ -10,6 +10,8 @@ from multiprocessing import Pool
 from functools import partial
 from collections import defaultdict
 import math
+import matplotlib.pyplot as plt
+import numpy as np
 
 def run_benchmark(data):
     #algo = KNNWithZScore 
@@ -120,17 +122,17 @@ if __name__ == '__main__':
         for i in true_1[15]:
             if mid == i[0]:
                 actual = i[1]
-                #print("act")
-                #print(actual)
+                print("act")
+                print(actual)
                 break
-        #print("PRED")
-        #print(pred)
+        print("PRED")
+        print(pred)
         total += (float(pred)-float(actual))**2 
         count += 1
     total = float(total)/count
-    rmse = math.sqrt(total)
+    rmse2 = math.sqrt(total)
     print("ONE USER SPARSE VECTOR:")
-    print(rmse)
+    print(rmse2)
     
     total = 0
     count = 0
@@ -148,9 +150,9 @@ if __name__ == '__main__':
             total += (float(pred)-float(actual))**2 
             count += 1
     total = float(total)/count
-    rmse = math.sqrt(total)
+    rmse3 = math.sqrt(total)
     print("THREE USERS SPARSE VECTORS:")
-    print(rmse) 
+    print(rmse3) 
     
     for uid,_ in estimated_4_unrated.items():
         for est in estimated_4_unrated[uid]:
@@ -166,9 +168,9 @@ if __name__ == '__main__':
             total += (float(pred)-float(actual))**2 
             count += 1
     total = float(total)/count
-    rmse = math.sqrt(total)
+    rmse4 = math.sqrt(total)
     print("SPARSE MATRIX:")
-    print(rmse) 
+    print(rmse4) 
     
     for uid,_ in estimated_5_unrated.items():
         for est in estimated_5_unrated[uid]:
@@ -184,9 +186,9 @@ if __name__ == '__main__':
             total += (float(pred)-float(actual))**2 
             count += 1
     total = float(total)/count
-    rmse = math.sqrt(total)
+    rmse5 = math.sqrt(total)
     print("SPARSER MATRIX:")
-    print(rmse) 
+    print(rmse5) 
     
     for uid,_ in estimated_6_unrated.items():
         for est in estimated_6_unrated[uid]:
@@ -202,8 +204,32 @@ if __name__ == '__main__':
             total += (float(pred)-float(actual))**2 
             count += 1
     total = float(total)/count
-    rmse = math.sqrt(total)
+    rmse6 = math.sqrt(total)
     print("SPARSEST MATRIX:")
-    print(rmse) 
+    print(rmse6) 
+    
+    mat_size = 18*19
+    x1 = len(estimated_2_unrated.items())
+    x2 = 0
+    for id_ in estimated_3_unrated.keys():
+        x2 += len(estimated_3_unrated[id_])
+    x3 = 0
+    for id_ in estimated_4_unrated.keys():
+        x3 += len(estimated_4_unrated[id_])
+    x4 = 0
+    for id_ in estimated_5_unrated.keys():
+        x4 += len(estimated_5_unrated[id_])
+    x5 = 0
+    for id_ in estimated_6_unrated.keys():
+        x5 += len(estimated_6_unrated[id_])
+    
+    x = np.divide([x1,x2,x3,x4,x5],mat_size)
+    x = np.multiply(x,100)
+    rmse = [rmse2,rmse3,rmse4,rmse5,rmse6]
+    
+    plt.plot(x,rmse)
+    plt.xlabel('Sparsity')
+    plt.ylabel('RMSE')
+    
     
     
