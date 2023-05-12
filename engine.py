@@ -98,7 +98,7 @@ class Engine:
         fcp_score = accuracy.fcp(preds,verbose=True)
         rmse_score = accuracy.rmse(preds,verbose=True)
 
-        return [fcp_score,rmse_score,b_params]
+        return [fcp_score,rmse_score,b_params,gs_cv.cv_results]
     
     #Creates parameter combos used in test_bestCV_alg and then 
     #returns dataframe with all the algorithms tested and their
@@ -172,7 +172,17 @@ class Engine:
         #Create dataframe used for html presentation
         df = pd.DataFrame(df_data)
         df.set_index('Algorithm',inplace=True)
-
+        
+        svd_csv = pd.DataFrame.from_dict(scores[0][3])
+        als_csv = pd.DataFrame.from_dict(scores[1][3])
+        sgd_csv = pd.DataFrame.from_dict(scores[2][3])
+        knn_csv = pd.DataFrame.from_dict(scores[3][3])
+        
+        svd_csv.to_csv('svd_gridsearchcv.csv')
+        als_csv.to_csv('als_gridsearchcv.csv')
+        sgd_csv.to_csv('sgd_gridsearchcv.csv')
+        knn_csv.to_csv('knn_gridsearchcv.csv')
+        
         return df
         
         
